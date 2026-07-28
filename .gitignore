@@ -1,3 +1,5 @@
+HELP.md
+
 # macOS
 .DS_Store
 
@@ -7,14 +9,35 @@ target/
 *.jar
 *.war
 
+# Maven Wrapper
+!.mvn/wrapper/maven-wrapper.jar
+
 # IDE files
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
 .idea/
+*.iws
 *.iml
+*.ipr
 .vscode/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
 
 # Environment and secret files
 .env
 *.key
+*.pem
 
 # Docker persistent volumes
 neo4j_data/

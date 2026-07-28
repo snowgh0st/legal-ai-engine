@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: legal-graph-rag
+  neo4j:
+    uri: bolt://localhost:7687
+    authentication:
+      username: neo4j
+      password: password123
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o
+          temperature: 0.1 # Low temperature for accurate legal extraction
+
+server:
+  port: 8080
