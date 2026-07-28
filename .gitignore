@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Build artifacts
+target/
+*.class
+*.jar
+*.war
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+
+# Environment and secret files
+.env
+*.key
+
+# Docker persistent volumes
+neo4j_data/
+neo4j_logs/
