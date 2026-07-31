@@ -1,4 +1,4 @@
-package com.enterprise.legal.legal_graph_rag;
+package com.enterprise.legal;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
