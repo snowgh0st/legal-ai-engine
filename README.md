@@ -28,8 +28,8 @@ LexIntel ingests multi-page commercial contracts (PDF), uses an LLM to structura
 
 ## Screenshots
 
-| Dashboard | GraphRAG Query & Explainability |
-|---|---|
+| LexIntel Dashboard with Explainability section|
+|---|
 | ![LexIntel dashboard with thought trace](docs/screenshots/graphrag-query.jpg) | 
 
 ## Architecture
