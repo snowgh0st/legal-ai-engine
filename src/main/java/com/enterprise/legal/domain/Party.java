@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Node("Party")
 @Data
 @Builder
@@ -15,9 +17,12 @@ import lombok.NoArgsConstructor;
 public class Party {
 
     @Id
-    private String name; // e.g., "Acme Corp", "Vendor LLC"
+    @Builder.Default
+    private String partyId = UUID.randomUUID().toString(); // Standard String UUID
 
-    private String partyType; // e.g., "ORGANIZATION", "INDIVIDUAL"
-    
+    private String name; // e.g., "Apex Global Enterprises Inc."
+
+    private String partyType; // e.g., "CLIENT", "VENDOR", "CONTRACTOR"
+
     private String jurisdiction; // e.g., "Delaware, USA"
 }

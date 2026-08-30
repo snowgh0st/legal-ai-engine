@@ -40,7 +40,7 @@ public class ContractIngestionService {
         this.auditLogRepository = auditLogRepository;
     }
 
-    @Transactional
+    @Transactional("transactionManager")
     public Contract processAndPersistContract(MultipartFile file, String userId) throws Exception {
         // 1. Apache Tika Text Extraction
         String rawPdfText;
