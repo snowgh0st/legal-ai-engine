@@ -1,19 +1,33 @@
-# This is a Docker Compose file for setting up a Neo4j database with the APOC plugin enabled. It defines a single service called "neo4j" that uses the official Neo4j Enterprise image version 5.18.0. The service exposes the web browser UI on port 7474 and the Bolt protocol on port 7687. It also sets environment variables for authentication, plugin installation, license agreement acceptance, and unrestricted access to APOC procedures. The data and logs are persisted in local directories mapped to the container's /data and /logs directories, respectively.
-
 version: '3.8'
 
 services:
-  neo4j:
+  legal-graphdb:
     image: neo4j:5.18.0-enterprise
     container_name: legal-graphdb
     ports:
-      - "7474:7474" # Web Browser UI
-      - "7687:7687" # Bolt Protocol Port
+      - "7474:7474" # HTTP Browser
+      - "7687:7687" # Bolt Protocol
     environment:
       - NEO4J_AUTH=neo4j/password123
-      - NEO4J_PLUGINS=["apoc"]
       - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
-      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+      - NEO4J_PLUGINS=["apoc"]
     volumes:
-      - ./neo4j_data:/data
-      - ./neo4j_logs:/logs
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+
+  legal-postgres:
+    image: postgres:16-alpine
+    container_name: legal-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=legal_audit_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
+  postgres_data:

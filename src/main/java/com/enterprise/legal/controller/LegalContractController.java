@@ -27,9 +27,12 @@ public class LegalContractController {
 
     // PDF Contract Ingestion Endpoint
     @PostMapping(value = "/contracts/ingest", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Contract> ingestContract(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Contract> ingestContract(
+            @RequestParam("file") MultipartFile file,
+            @RequestHeader(value = "X-User-Id", defaultValue = "SYSTEM_ANALYST") String userId) {
         try {
-            Contract savedContract = ingestionService.processAndPersistContract(file);
+            // Updated to pass both file and userId to ingestionService
+            Contract savedContract = ingestionService.processAndPersistContract(file, userId);
             return ResponseEntity.ok(savedContract);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
