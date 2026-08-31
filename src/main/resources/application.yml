@@ -1,14 +1,21 @@
 spring:
   application:
     name: legal-graph-rag
-  
-  # Spring Boot Admin Client Self-Registration Configuration
+
+  # Spring Boot Admin Context Path
   boot:
     admin:
+      context-path: /admin
       client:
-        url: http://localhost:8080
+        url: http://localhost:8080/admin
 
-  # PostgreSQL JPA Configuration
+  # Spring Data REST Configuration
+  data:
+    rest:
+      base-path: /api/v1/data
+      default-media-type: application/hal+json
+
+  # Databases & AI Configurations
   datasource:
     url: jdbc:postgresql://localhost:5432/legal_audit_db
     username: postgres
@@ -21,14 +28,12 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-  # Neo4j Graph Database Configuration
   neo4j:
     uri: bolt://localhost:7687
     authentication:
       username: neo4j
       password: password123
 
-  # Spring AI Configuration
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
@@ -42,20 +47,14 @@ spring:
       max-file-size: 50MB
       max-request-size: 50MB
 
-# Actuator Metrics & Health Exposure for Dashboard
 management:
   endpoints:
     web:
       exposure:
-        include: "*" # Expose all endpoints (health, info, metrics, env, loggers, heapdump)
+        include: "*"
   endpoint:
     health:
       show-details: always
-  health:
-    db:
-      enabled: true
-    neo4j:
-      enabled: true
 
 server:
   port: 8080

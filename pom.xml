@@ -123,12 +123,25 @@
             <artifactId>spring-boot-admin-starter-server</artifactId>
         </dependency>
 
-        <!-- Spring Boot Admin Client (Self-registers with the Dashboard) -->
+        <!-- Spring Boot Admin Server & Client (Infra Monitoring at /admin) -->
         <dependency>
             <groupId>de.codecentric</groupId>
             <artifactId>spring-boot-admin-starter-client</artifactId>
         </dependency>
 		
+		<!-- Spring Data REST (Exposes Repositories as REST APIs) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-rest</artifactId>
+        </dependency>
+
+		<!-- Springdoc OpenAPI / Swagger UI (Data & API GUI at /swagger-ui.html) -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.6.0</version>
+        </dependency>
+
     </dependencies>
 
 	<!-- 3. REPOSITORIES (Custom Maven repos go here) -->
