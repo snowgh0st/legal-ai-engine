@@ -30,6 +30,8 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+		<!-- Ensure version matches your Spring Boot 3.x release family -->
+        <spring-boot-admin.version>3.2.3</spring-boot-admin.version>
 	</properties>
 
 	<!-- 1. DEPENDENCY MANAGEMENT (BOM imports go here) -->
@@ -42,6 +44,13 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+			<dependency>
+                <groupId>de.codecentric</groupId>
+                <artifactId>spring-boot-admin-dependencies</artifactId>
+                <version>${spring-boot-admin.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -101,6 +110,25 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+		<!-- Spring Boot Actuator (exposes metrics & health) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Admin Server (Dashboard Web UI) -->
+        <dependency>
+            <groupId>de.codecentric</groupId>
+            <artifactId>spring-boot-admin-starter-server</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Admin Client (Self-registers with the Dashboard) -->
+        <dependency>
+            <groupId>de.codecentric</groupId>
+            <artifactId>spring-boot-admin-starter-client</artifactId>
+        </dependency>
+		
     </dependencies>
 
 	<!-- 3. REPOSITORIES (Custom Maven repos go here) -->

@@ -2,6 +2,12 @@ spring:
   application:
     name: legal-graph-rag
   
+  # Spring Boot Admin Client Self-Registration Configuration
+  boot:
+    admin:
+      client:
+        url: http://localhost:8080
+
   # PostgreSQL JPA Configuration
   datasource:
     url: jdbc:postgresql://localhost:5432/legal_audit_db
@@ -29,13 +35,27 @@ spring:
       chat:
         options:
           model: gpt-4o
-          temperature: 0.1 # Low temperature for accurate legal extraction
+          temperature: 0.1
 
-  # Multipart File Upload Limits (For Large Legal PDF Contracts)
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
+
+# Actuator Metrics & Health Exposure for Dashboard
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*" # Expose all endpoints (health, info, metrics, env, loggers, heapdump)
+  endpoint:
+    health:
+      show-details: always
+  health:
+    db:
+      enabled: true
+    neo4j:
+      enabled: true
 
 server:
   port: 8080
