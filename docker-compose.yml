@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   # ---------------------------------------------------------------------------
@@ -7,20 +6,23 @@ services:
   legal-graphdb:
     image: neo4j:5.18.0-enterprise
     container_name: legal-graphdb
+    env_file:
+      - ./backend/.env
     ports:
       - "7474:7474" # HTTP Browser
       - "7687:7687" # Bolt Protocol
     environment:
-      - NEO4J_AUTH=neo4j/password123
+      - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD}
       - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
       - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_server_config_strict__validation_enabled=false
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
     networks:
       - legal-network
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      test: ["CMD-SHELL", "cypher-shell -u ${NEO4J_USER:-neo4j} -p ${NEO4J_PASSWORD} 'RETURN 1;' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,18 +30,20 @@ services:
   legal-postgres:
     image: postgres:16-alpine
     container_name: legal-postgres
+    env_file:
+      - ./backend/.env
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=legal_audit_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password123
+      - POSTGRES_DB=${POSTGRES_DB:-legal_audit_db}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - legal-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d legal_audit_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-legal_audit_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -52,15 +56,17 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: legal-backend
+    env_file:
+      - ./backend/.env
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://legal-postgres:5432/legal_audit_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=password123
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://legal-postgres:5432/${POSTGRES_DB:-legal_audit_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_NEO4J_URI=bolt://legal-graphdb:7687
-      - SPRING_NEO4J_AUTHENTICATION_USERNAME=neo4j
-      - SPRING_NEO4J_AUTHENTICATION_PASSWORD=password123
+      - SPRING_NEO4J_AUTHENTICATION_USERNAME=${NEO4J_USER:-neo4j}
+      - SPRING_NEO4J_AUTHENTICATION_PASSWORD=${NEO4J_PASSWORD}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
       legal-postgres:
@@ -84,9 +90,6 @@ services:
     networks:
       - legal-network
 
-# ---------------------------------------------------------------------------
-# Networks & Volumes
-# ---------------------------------------------------------------------------
 networks:
   legal-network:
     driver: bridge
