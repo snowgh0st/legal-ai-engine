@@ -1,4 +1,4 @@
-package com.enterprise.legal;
+package com.lexintel.contracts;
 
 import de.codecentric.boot.admin.server.config.EnableAdminServer;
 import org.springframework.boot.SpringApplication;

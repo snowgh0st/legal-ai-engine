@@ -1,6 +1,6 @@
-package com.enterprise.legal.repository;
+package com.lexintel.contracts.repository;
 
-import com.enterprise.legal.domain.Clause;
+import com.lexintel.contracts.domain.Clause;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;

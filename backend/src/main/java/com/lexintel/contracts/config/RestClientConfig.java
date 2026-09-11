@@ -1,4 +1,4 @@
-package com.enterprise.legal.config;
+package com.lexintel.contracts.config;
 
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;

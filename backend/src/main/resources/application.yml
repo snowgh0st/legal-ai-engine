@@ -8,6 +8,12 @@ spring:
       context-path: /admin
       client:
         url: http://localhost:8080/admin
+  
+  # Spring Configuration Import from .env or .properties
+  config:
+    import: 
+      - optional:file:.env[.properties]
+      - optional:file:backend/.env[.properties]
 
   # Spring Data REST Configuration
   data:

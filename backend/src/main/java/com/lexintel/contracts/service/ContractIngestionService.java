@@ -1,12 +1,12 @@
-package com.enterprise.legal.service;
+package com.lexintel.contracts.service;
 
-import com.enterprise.legal.domain.Clause;
-import com.enterprise.legal.domain.Contract;
-import com.enterprise.legal.domain.Party;
-import com.enterprise.legal.domain.jpa.DocumentAuditLog;
-import com.enterprise.legal.dto.ContractExtractionResponse;
-import com.enterprise.legal.repository.ContractRepository;
-import com.enterprise.legal.repository.jpa.DocumentAuditLogRepository;
+import com.lexintel.contracts.domain.Clause;
+import com.lexintel.contracts.domain.Contract;
+import com.lexintel.contracts.domain.Party;
+import com.lexintel.contracts.domain.jpa.DocumentAuditLog;
+import com.lexintel.contracts.dto.ContractExtractionResponse;
+import com.lexintel.contracts.repository.ContractRepository;
+import com.lexintel.contracts.repository.jpa.DocumentAuditLogRepository;
 
 import org.apache.tika.Tika;
 import org.springframework.ai.chat.client.ChatClient;

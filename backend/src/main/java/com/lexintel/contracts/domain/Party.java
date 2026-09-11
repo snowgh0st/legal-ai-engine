@@ -1,4 +1,4 @@
-package com.enterprise.legal.domain;
+package com.lexintel.contracts.domain;
 
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;

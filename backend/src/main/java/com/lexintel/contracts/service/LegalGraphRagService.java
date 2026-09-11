@@ -1,6 +1,6 @@
-package com.enterprise.legal.service;
+package com.lexintel.contracts.service;
 
-import com.enterprise.legal.dto.QueryDTOs.GraphRagResponse;
+import com.lexintel.contracts.dto.QueryDTOs.GraphRagResponse;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
 import org.springframework.ai.chat.client.ChatClient;

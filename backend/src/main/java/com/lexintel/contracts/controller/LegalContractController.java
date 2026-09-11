@@ -1,10 +1,10 @@
-package com.enterprise.legal.controller;
+package com.lexintel.contracts.controller;
 
-import com.enterprise.legal.domain.Contract;
-import com.enterprise.legal.dto.QueryDTOs.GraphRagRequest;
-import com.enterprise.legal.dto.QueryDTOs.GraphRagResponse;
-import com.enterprise.legal.service.ContractIngestionService;
-import com.enterprise.legal.service.LegalGraphRagService;
+import com.lexintel.contracts.domain.Contract;
+import com.lexintel.contracts.dto.QueryDTOs.GraphRagRequest;
+import com.lexintel.contracts.dto.QueryDTOs.GraphRagResponse;
+import com.lexintel.contracts.service.ContractIngestionService;
+import com.lexintel.contracts.service.LegalGraphRagService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,4 +1,4 @@
-package com.enterprise.legal.dto;
+package com.lexintel.contracts.dto;
 
 import java.util.List;
 
