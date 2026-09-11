@@ -69,3 +69,9 @@ yarn-error.log*
 *.ipr
 .vscode/
 .fleet/
+
+# ==========================================
+# Azurite Azure Storage Emulator local state & config
+# ==========================================
+__azurite_db*
+azuriteconfig.json
