@@ -1,0 +1,85 @@
+spring:
+  application:
+    name: legal-graph-rag
+
+  # Spring Boot Admin Context & Server Setup
+  boot:
+    admin:
+      context-path: /admin
+      client:
+        url: http://localhost:8080/admin
+
+  # Spring Data REST Configuration
+  data:
+    rest:
+      base-path: /api/v1/data
+      default-media-type: application/hal+json
+
+  # Databases & AI Configurations
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/legal_audit_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:password123}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  neo4j:
+    uri: ${SPRING_NEO4J_URI:bolt://localhost:7687}
+    authentication:
+      username: ${SPRING_NEO4J_AUTHENTICATION_USERNAME:neo4j}
+      password: ${SPRING_NEO4J_AUTHENTICATION_PASSWORD:password123}
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.1
+      embedding:
+        options:
+          model: text-embedding-3-small
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+# Springdoc OpenAPI & Swagger UI Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  # Exclude Spring Boot Admin endpoints from appearing in Swagger UI docs
+  paths-to-exclude:
+    - /admin/**
+
+# Spring Boot Actuator Monitoring Endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.data.neo4j.cypher.deprecation: ERROR
+    org.springframework.web.client.RestClient: DEBUG
+    org.springframework.ai: DEBUG
+    org.springframework.web.client: TRACE
+    org.springframework.data.neo4j: DEBUG
+    org.apache.hc.client5.http.wire: DEBUG
+    org.apache.hc.client5.http.headers: DEBUG
+
+server:
+  port: 8080

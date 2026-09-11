@@ -1,2 +1,10 @@
-/mvnw text eol=lf
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# Enforce LF for shell scripts and Maven wrappers (critical for Docker/Linux)
+**/mvnw text eol=lf
+*.sh text eol=lf
+
+# Enforce CRLF for Windows batch scripts
 *.cmd text eol=crlf
+*.bat text eol=crlf
