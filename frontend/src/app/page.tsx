@@ -2,9 +2,10 @@
 
 import React, { useState } from "react";
 import DynamicGraphCanvas from "@/components/GraphCanvas";
+import LegalChat from "@/components/LegalChat";
 import { 
-  FileText, Network, Bot, Upload, Send, 
-  Sparkles, Database, Layers, ArrowRight 
+  FileText, Network, Bot, Upload, 
+  Database, Layers, ArrowRight 
 } from "lucide-react";
 
 export default function LegalPortalDashboard() {
@@ -12,27 +13,23 @@ export default function LegalPortalDashboard() {
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [messages, setMessages] = useState<Array<{ sender: "user" | "ai"; text: string; context?: string }>>([
-    {
-      sender: "ai",
-      text: "Legal Knowledge Graph connected. Upload a contract PDF to extract entities into Neo4j and PostgreSQL, or query existing contracts.",
-    },
-  ]);
-  const [inputQuery, setInputQuery] = useState("");
+  const [ingestStatus, setIngestStatus] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files[0]) {
-        const selected = e.target.files[0];
-        setFile(selected);
-        // Revoke previous object URL if existing to avoid memory leaks
-        if (fileUrl) URL.revokeObjectURL(fileUrl);
-        setFileUrl(URL.createObjectURL(selected));
-      }
-    };
+    if (e.target.files && e.target.files[0]) {
+      const selected = e.target.files[0];
+      setFile(selected);
+      // Revoke previous object URL if existing to avoid memory leaks
+      if (fileUrl) URL.revokeObjectURL(fileUrl);
+      setFileUrl(URL.createObjectURL(selected));
+      setIngestStatus(null);
+    }
+  };
 
   const handleIngest = async () => {
     if (!file) return;
     setIsUploading(true);
+    setIngestStatus(null);
 
     const formData = new FormData();
     formData.append("file", file);
@@ -52,57 +49,13 @@ export default function LegalPortalDashboard() {
       }
 
       const data = await res.json();
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: "ai",
-          text: `Contract "${data.title || file.name}" successfully extracted! Persisted to Neo4j graph with ${
-            data.clauses ? data.clauses.length : 0
-          } clauses and logged to PostgreSQL audit DB.`,
-        },
-      ]);
+      setIngestStatus(
+        `Extracted "${data.title || file.name}"! Persisted to Neo4j (${data.clauses ? data.clauses.length : 0} clauses) & PostgreSQL.`
+      );
     } catch (err: any) {
-      setMessages((prev) => [
-        ...prev,
-        { sender: "ai", text: `Ingestion Error: ${err.message}` },
-      ]);
+      setIngestStatus(`Ingestion Error: ${err.message}`);
     } finally {
       setIsUploading(false);
-    }
-  };
-
-  const handleQuery = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputQuery.trim()) return;
-
-    const userText = inputQuery;
-    setInputQuery("");
-    setMessages((prev) => [...prev, { sender: "user", text: userText }]);
-
-    try {
-      const res = await fetch("http://localhost:8080/api/v1/legal/query", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: userText }),
-      });
-
-      if (!res.ok) throw new Error("Query failed");
-      const data = await res.json();
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: "ai",
-          text: data.answer,
-          context: data.graphContextUsed,
-        },
-      ]);
-    } catch (err: any) {
-      setMessages((prev) => [
-        ...prev,
-        { sender: "ai", text: `GraphRAG Error: ${err.message}` },
-      ]);
     }
   };
 
@@ -140,16 +93,21 @@ export default function LegalPortalDashboard() {
                 type="file"
                 accept=".pdf"
                 onChange={handleFileChange}
-                className="text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-indigo-300 hover:file:bg-slate-700 cursor-pointer"
+                className="text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-indigo-300 hover:file:bg-slate-700 cursor-pointer flex-1"
               />
               <button
                 onClick={handleIngest}
                 disabled={!file || isUploading}
-                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-medium rounded-md flex items-center gap-1 shrink-0"
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-medium rounded-md flex items-center gap-1 shrink-0 transition-colors"
               >
                 {isUploading ? "Extracting..." : "Extract"} <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
+            {ingestStatus && (
+              <p className="text-[11px] font-mono text-indigo-300 bg-indigo-950/50 border border-indigo-900/50 p-2 rounded">
+                {ingestStatus}
+              </p>
+            )}
           </div>
 
           {/* Embedded PDF Previewer Pane */}
@@ -195,59 +153,8 @@ export default function LegalPortalDashboard() {
             {activeTab === "graph" ? (
               <DynamicGraphCanvas />
             ) : (
-              <div className="flex-1 flex flex-col justify-between overflow-hidden">
-                {/* Chat History */}
-                <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                  {messages.map((msg, i) => (
-                    <div
-                      key={i}
-                      className={`flex gap-3 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-                    >
-                      {msg.sender === "ai" && (
-                        <div className="w-7 h-7 rounded bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
-                          <Sparkles className="w-3.5 h-3.5" />
-                        </div>
-                      )}
-                      <div
-                        className={`max-w-xl text-xs p-3.5 rounded-xl leading-relaxed ${
-                          msg.sender === "user"
-                            ? "bg-indigo-600 text-white rounded-tr-none"
-                            : "bg-slate-950 border border-slate-800 text-slate-300 rounded-tl-none"
-                        }`}
-                      >
-                        <p>{msg.text}</p>
-                        {msg.context && (
-                          <details className="mt-2 pt-2 border-t border-slate-800">
-                            <summary className="text-[10px] text-indigo-400 font-mono cursor-pointer">
-                              Retrieved Graph Sub-tree Context
-                            </summary>
-                            <pre className="mt-1 p-2 bg-slate-900 rounded text-[9px] font-mono text-slate-400 overflow-x-auto">
-                              {msg.context}
-                            </pre>
-                          </details>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Query Input */}
-                <form onSubmit={handleQuery} className="mt-4 flex gap-2">
-                  <input
-                    type="text"
-                    value={inputQuery}
-                    onChange={(e) => setInputQuery(e.target.value)}
-                    placeholder="Ask a compliance question..."
-                    className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5"
-                  >
-                    <span>Query</span>
-                    <Send className="w-3.5 h-3.5" />
-                  </button>
-                </form>
+              <div className="flex-1 h-full overflow-hidden">
+                <LegalChat />
               </div>
             )}
           </div>

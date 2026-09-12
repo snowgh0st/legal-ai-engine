@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.66",
+    "@ai-sdk/react": "^4.0.102",
+    "ai": "^7.0.99",
     "clsx": "^2.1.1",
     "cytoscape": "^3.34.2",
     "lucide-react": "^1.37.0",

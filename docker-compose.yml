@@ -77,6 +77,8 @@ services:
       - legal-network
 
   legal-frontend:
+    profiles:
+      - frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile
