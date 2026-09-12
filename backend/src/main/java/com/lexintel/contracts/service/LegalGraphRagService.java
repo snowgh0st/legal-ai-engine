@@ -3,14 +3,18 @@ package com.lexintel.contracts.service;
 import com.lexintel.contracts.dto.QueryDTOs.GraphRagResponse;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
 public class LegalGraphRagService {
+
+    private static final Logger log = LoggerFactory.getLogger(LegalGraphRagService.class);
 
     private final Driver neo4jDriver;
     private final ChatClient chatClient;
@@ -20,12 +24,21 @@ public class LegalGraphRagService {
         this.chatClient = chatClientBuilder.build();
     }
 
-    public GraphRagResponse answerLegalQuestion(String question) {
-        // 1. Cypher Graph Traversal: Traverse 2 hops deep to retrieve contract + party context
+    /**
+     * Dedicated method for Next.js Vercel AI SDK streaming endpoint.
+     * Traverses Neo4j and returns raw graph sub-tree context string.
+     */
+    public String retrieveContext(String question) {
+        String searchTerm = extractSearchTerm(question);
+        log.info("Executing Cypher sub-tree traversal for search term: '{}'", searchTerm);
+
         String cypherQuery = """
             MATCH (c:Contract)-[:HAS_CLAUSE]->(cl:Clause)
             OPTIONAL MATCH (c)-[:PARTY_TO]->(p:Party)
             OPTIONAL MATCH (cl)-[r:DEPENDS_ON|CONFLICTS_WITH]->(other:Clause)
+            WHERE toLower(cl.rawText) CONTAINS toLower($searchTerm)
+               OR toLower(cl.clauseType) CONTAINS toLower($searchTerm)
+               OR toLower(c.title) CONTAINS toLower($searchTerm)
             RETURN c.title AS contractTitle,
                    cl.clauseType AS clauseType,
                    cl.rawText AS clauseText,
@@ -37,13 +50,27 @@ public class LegalGraphRagService {
 
         List<String> graphFacts;
         try (var session = neo4jDriver.session()) {
-            var result = session.run(cypherQuery);
-            graphFacts = result.list(record -> formatGraphRecord(record));
+            var result = session.run(cypherQuery, Map.of("searchTerm", searchTerm));
+            graphFacts = result.list(this::formatGraphRecord);
+        } catch (Exception e) {
+            log.error("Failed to query Neo4j graph context", e);
+            return "No matching graph context found due to query error.";
         }
 
-        String graphContext = String.join("\n", graphFacts);
+        if (graphFacts.isEmpty()) {
+            log.warn("No graph nodes matched term: '{}'. Running fallback query.", searchTerm);
+            return retrieveFallbackContext();
+        }
 
-        // 2. Synthesize answer with LLM using full Graph context
+        return String.join("\n", graphFacts);
+    }
+
+    /**
+     * Full Spring AI non-streaming endpoint handler (retained for backward compatibility).
+     */
+    public GraphRagResponse answerLegalQuestion(String question) {
+        String graphContext = retrieveContext(question);
+
         String answer = chatClient.prompt()
                 .user(u -> u.text("""
                     You are a legal compliance AI engine.
@@ -74,5 +101,29 @@ public class LegalGraphRagService {
             record.get("relationship").asString("NONE"),
             record.get("relatedClauseType").asString("N/A")
         );
+    }
+
+    private String extractSearchTerm(String question) {
+        if (question == null || question.isBlank()) return "";
+        // Strips common stop words to improve basic Cypher matching
+        return question.replaceAll("(?i)\\b(what|is|are|the|in|for|and|or|of|clause|section)\\b", "").trim();
+    }
+
+    private String retrieveFallbackContext() {
+        // Fallback Cypher execution returning top 5 clauses if keyword search misses
+        String fallbackQuery = """
+            MATCH (c:Contract)-[:HAS_CLAUSE]->(cl:Clause)
+            RETURN c.title AS contractTitle, cl.clauseType AS clauseType, cl.rawText AS clauseText
+            LIMIT 5
+            """;
+        try (var session = neo4jDriver.session()) {
+            return String.join("\n", session.run(fallbackQuery).list(record -> 
+                String.format("Contract: '%s' | Clause [%s]: '%s'",
+                    record.get("contractTitle").asString("N/A"),
+                    record.get("clauseType").asString("N/A"),
+                    record.get("clauseText").asString("N/A")
+                )
+            ));
+        }
     }
 }
