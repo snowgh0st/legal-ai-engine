@@ -12,7 +12,7 @@ public interface ClauseRepository extends Neo4jRepository<Clause, String> {
 
     List<Clause> findByClauseType(String clauseType);
 
-    // Cypher query for multi-hop Graph traversal (Context Expansion for GraphRAG)
+    // Cypher query for multi-hop Graph traversal (Context Expansion for RagSearch)
     @Query("""
         MATCH (c:Contract)-[:HAS_CLAUSE]->(cl:Clause)
         WHERE cl.clauseType = $type

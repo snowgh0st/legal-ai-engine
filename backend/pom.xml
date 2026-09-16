@@ -11,9 +11,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.lexintel.contracts</groupId>
-    <artifactId>legal-graph-rag</artifactId>
+    <artifactId>lexintel</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>legal-graph-rag</name>
+    <name>lexintel</name>
     <description>Enterprise Legal Contract &amp; Compliance Knowledge Graph</description>
     <url/>
     <licenses>

@@ -27,7 +27,7 @@ import org.springframework.test.context.TestPropertySource;
     "NEO4J_USER=neo4j",
     "NEO4J_PASSWORD=test_password"
 })
-class LegalGraphRagApplicationTests {
+class LexIntelApplicationTests {
 
     @MockBean
     private ContractRepository contractRepository;

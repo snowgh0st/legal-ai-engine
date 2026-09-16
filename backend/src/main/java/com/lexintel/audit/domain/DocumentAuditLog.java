@@ -1,4 +1,4 @@
-package com.lexintel.contracts.domain.jpa;
+package com.lexintel.audit.domain;
 
 import jakarta.persistence.*;
 import lombok.*;

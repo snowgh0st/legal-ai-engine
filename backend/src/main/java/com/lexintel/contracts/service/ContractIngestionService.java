@@ -3,10 +3,10 @@ package com.lexintel.contracts.service;
 import com.lexintel.contracts.domain.Clause;
 import com.lexintel.contracts.domain.Contract;
 import com.lexintel.contracts.domain.Party;
-import com.lexintel.contracts.domain.jpa.DocumentAuditLog;
+import com.lexintel.audit.domain.DocumentAuditLog;
 import com.lexintel.contracts.dto.ContractExtractionResponse;
 import com.lexintel.contracts.repository.ContractRepository;
-import com.lexintel.contracts.repository.jpa.DocumentAuditLogRepository;
+import com.lexintel.audit.repository.DocumentAuditLogRepository;
 
 import org.apache.tika.Tika;
 import org.springframework.ai.chat.client.ChatClient;

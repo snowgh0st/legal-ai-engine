@@ -1,10 +1,10 @@
 package com.lexintel.contracts.controller;
 
 import com.lexintel.contracts.domain.Contract;
-import com.lexintel.contracts.dto.QueryDTOs.GraphRagRequest;
-import com.lexintel.contracts.dto.QueryDTOs.GraphRagResponse;
+import com.lexintel.rag.dto.RagSearchRequest;
+import com.lexintel.rag.dto.RagSearchResponse;
 import com.lexintel.contracts.service.ContractIngestionService;
-import com.lexintel.contracts.service.LegalGraphRagService;
+import com.lexintel.rag.service.RagSearchService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,18 +15,18 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/legal")
-public class LegalContractController {
+public class ContractController {
 
-    private static final Logger log = LoggerFactory.getLogger(LegalContractController.class);
+    private static final Logger log = LoggerFactory.getLogger(ContractController.class);
 
     private final ContractIngestionService ingestionService;
-    private final LegalGraphRagService graphRagService;
+    private final RagSearchService ragSearchService;
 
-    public LegalContractController(
+    public ContractController(
             ContractIngestionService ingestionService,
-            LegalGraphRagService graphRagService) {
+            RagSearchService ragSearchService) {
         this.ingestionService = ingestionService;
-        this.graphRagService = graphRagService;
+        this.ragSearchService = ragSearchService;
     }
 
     @PostMapping(value = "/contracts/ingest", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -47,9 +47,9 @@ public class LegalContractController {
     }
 
     @PostMapping("/query")
-    public ResponseEntity<GraphRagResponse> queryKnowledgeGraph(@RequestBody GraphRagRequest request) {
+    public ResponseEntity<RagSearchResponse> queryKnowledgeGraph(@RequestBody RagSearchRequest request) {
         log.info(">>> QUERY REQUEST RECEIVED: {}", request.question());
-        GraphRagResponse response = graphRagService.answerLegalQuestion(request.question());
+        RagSearchResponse response = ragSearchService.answerLegalQuestion(request.question());
         return ResponseEntity.ok(response);
     }
 }

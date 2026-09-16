@@ -1,6 +1,6 @@
-package com.lexintel.contracts.service;
+package com.lexintel.rag.service;
 
-import com.lexintel.contracts.dto.QueryDTOs.GraphRagResponse;
+import com.lexintel.rag.dto.RagSearchResponse;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
 import org.slf4j.Logger;
@@ -12,14 +12,14 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class LegalGraphRagService {
+public class RagSearchService {
 
-    private static final Logger log = LoggerFactory.getLogger(LegalGraphRagService.class);
+    private static final Logger log = LoggerFactory.getLogger(RagSearchService.class);
 
     private final Driver neo4jDriver;
     private final ChatClient chatClient;
 
-    public LegalGraphRagService(Driver neo4jDriver, ChatClient.Builder chatClientBuilder) {
+    public RagSearchService(Driver neo4jDriver, ChatClient.Builder chatClientBuilder) {
         this.neo4jDriver = neo4jDriver;
         this.chatClient = chatClientBuilder.build();
     }
@@ -68,7 +68,7 @@ public class LegalGraphRagService {
     /**
      * Full Spring AI non-streaming endpoint handler (retained for backward compatibility).
      */
-    public GraphRagResponse answerLegalQuestion(String question) {
+    public RagSearchResponse answerLegalQuestion(String question) {
         String graphContext = retrieveContext(question);
 
         String answer = chatClient.prompt()
@@ -88,7 +88,7 @@ public class LegalGraphRagService {
                 .call()
                 .content();
 
-        return new GraphRagResponse(question, answer, graphContext);
+        return new RagSearchResponse(question, answer, graphContext);
     }
 
     private String formatGraphRecord(Record record) {

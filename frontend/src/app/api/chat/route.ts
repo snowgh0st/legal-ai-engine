@@ -26,19 +26,18 @@ export async function POST(req: Request) {
     }
   }
 
-  // Fetch contextual GraphRAG chunks from local Spring Boot backend
+  // Fetch contextual RagSearch chunks from local Spring Boot backend
   let graphContext = '';
   try {
     const backendUrl = process.env.SPRING_BACKEND_URL || 'http://localhost:8080';
-    const ragResponse = await fetch(`${backendUrl}/api/rag/search`, {
+    const ragResponse = await fetch(`${backendUrl}/api/rag/context`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: userQuery }),
     });
 
     if (ragResponse.ok) {
-      const data = await ragResponse.json();
-      graphContext = data.context || '';
+      const data = await ragResponse.text();
     }
   } catch (err) {
     console.warn('Spring Boot backend unavailable, proceeding with standard LLM stream:', err);

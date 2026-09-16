@@ -1,6 +1,6 @@
 spring:
   application:
-    name: legal-graph-rag
+    name: lexintel
 
   # Spring Boot Admin Context & Server Setup
   boot:
@@ -15,7 +15,7 @@ spring:
       - optional:file:.env[.properties]
       - optional:file:backend/.env[.properties]
 
-  # Spring Data REST Configuration
+  # Spring Data Configuration
   data:
     rest:
       base-path: /api/v1/data
@@ -23,7 +23,7 @@ spring:
 
   # Relational Database (PostgreSQL)
   datasource:
-    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/legal_audit_db}
+    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/lexintel_audit_db}
     username: ${POSTGRES_USER:postgres}
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -34,7 +34,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-  # Graph Database (Neo4j)
+  # Graph Database (Neo4j Connection)
   neo4j:
     uri: ${NEO4J_URI:bolt://localhost:7687}
     authentication:
@@ -78,6 +78,18 @@ management:
   endpoint:
     health:
       show-details: always
+
+# SEC EDGAR API Configuration
+sec:
+  edgar:
+    user-agent: "LexIntel-RagSearch admin@lexintel.io" # Required by SEC EDGAR API
+    base-url: "https://data.sec.gov"
+    archives-url: "https://www.sec.gov/Archives"
+
+# Slack Webhook Configuration
+slack:
+  webhook:
+    url: ${SLACK_WEBHOOK_URL:https://hooks.slack.com/services/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}
 
 # Logging Levels
 logging:

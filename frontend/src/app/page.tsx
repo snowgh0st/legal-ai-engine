@@ -123,7 +123,7 @@ export default function LegalPortalDashboard() {
           </div>
         </div>
 
-        {/* Right Pane: Graph Viz / GraphRAG Chat (7 Cols) */}
+        {/* Right Pane: Graph Viz / RagSearch Chat (7 Cols) */}
         <div className="col-span-7 flex flex-col bg-slate-900/30">
           
           {/* Mode Switcher Tabs */}
@@ -135,7 +135,7 @@ export default function LegalPortalDashboard() {
                   activeTab === "chat" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                <Bot className="w-3.5 h-3.5" /> Compliance GraphRAG Chat
+                <Bot className="w-3.5 h-3.5" /> Compliance RagSearch Chat
               </button>
               <button
                 onClick={() => setActiveTab("graph")}

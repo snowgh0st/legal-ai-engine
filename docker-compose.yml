@@ -3,9 +3,9 @@ services:
   # ---------------------------------------------------------------------------
   # Database Infrastructure
   # ---------------------------------------------------------------------------
-  legal-graphdb:
+  lexintel-graphdb:
     image: neo4j:5.18.0-enterprise
-    container_name: legal-graphdb
+    container_name: lexintel-graphdb
     env_file:
       - ./backend/.env
     ports:
@@ -20,30 +20,30 @@ services:
       - neo4j_data:/data
       - neo4j_logs:/logs
     networks:
-      - legal-network
+      - lexintel-network
     healthcheck:
       test: ["CMD-SHELL", "cypher-shell -u ${NEO4J_USER:-neo4j} -p ${NEO4J_PASSWORD} 'RETURN 1;' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  legal-postgres:
+  lexintel-postgres:
     image: postgres:16-alpine
-    container_name: legal-postgres
+    container_name: lexintel-postgres
     env_file:
       - ./backend/.env
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-legal_audit_db}
+      - POSTGRES_DB=${POSTGRES_DB:-lexintel_audit_db}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - legal-network
+      - lexintel-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-legal_audit_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-lexintel_audit_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -51,49 +51,50 @@ services:
   # ---------------------------------------------------------------------------
   # Application Services
   # ---------------------------------------------------------------------------
-  legal-backend:
+  lexintel-backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: legal-backend
+    container_name: lexintel-backend
     env_file:
       - ./backend/.env
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://legal-postgres:5432/${POSTGRES_DB:-legal_audit_db}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://lexintel-postgres:5432/${POSTGRES_DB:-lexintel_audit_db}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
-      - SPRING_NEO4J_URI=bolt://legal-graphdb:7687
+      - SPRING_NEO4J_URI=bolt://lexintel-graphdb:7687
       - SPRING_NEO4J_AUTHENTICATION_USERNAME=${NEO4J_USER:-neo4j}
       - SPRING_NEO4J_AUTHENTICATION_PASSWORD=${NEO4J_PASSWORD}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SLACK_WEBHOOK_URL=https://hooks.slack.com/services/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
     depends_on:
-      legal-postgres:
+      lexintel-postgres:
         condition: service_healthy
-      legal-graphdb:
+      lexintel-graphdb:
         condition: service_healthy
     networks:
-      - legal-network
+      - lexintel-network
 
-  legal-frontend:
+  lexintel-frontend:
     profiles:
       - frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: legal-frontend
+    container_name: lexintel-frontend
     ports:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8080
     depends_on:
-      - legal-backend
+      - lexintel-backend
     networks:
-      - legal-network
+      - lexintel-network
 
 networks:
-  legal-network:
+  lexintel-network:
     driver: bridge
 
 volumes:

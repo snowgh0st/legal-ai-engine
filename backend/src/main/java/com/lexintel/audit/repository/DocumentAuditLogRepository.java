@@ -1,6 +1,6 @@
-package com.lexintel.contracts.repository.jpa;
+package com.lexintel.audit.repository;
 
-import com.lexintel.contracts.domain.jpa.DocumentAuditLog;
+import com.lexintel.audit.domain.DocumentAuditLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import org.springframework.stereotype.Repository;

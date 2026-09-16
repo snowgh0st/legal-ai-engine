@@ -28,7 +28,7 @@ export default function LegalChat() {
           </div>
           <div>
             <h2 className="text-sm font-semibold text-slate-100">LexIntel Assistant</h2>
-            <p className="text-xs text-slate-400">GraphRAG & Compliance Stream Engine</p>
+            <p className="text-xs text-slate-400">RagSearch & Compliance Stream Engine</p>
           </div>
         </div>
         <span className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 font-medium">

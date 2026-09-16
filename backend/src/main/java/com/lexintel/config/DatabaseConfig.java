@@ -1,4 +1,4 @@
-package com.lexintel.contracts.config;
+package com.lexintel.config;
 
 import org.neo4j.driver.Driver;
 import org.springframework.context.annotation.Bean;
