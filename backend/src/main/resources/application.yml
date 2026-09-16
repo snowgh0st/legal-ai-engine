@@ -73,11 +73,14 @@ springdoc:
 management:
   endpoints:
     web:
+      base-path: /actuator
       exposure:
-        include: "*"
+        include: "health,info,metrics,prometheus"
   endpoint:
     health:
-      show-details: always
+      show-details: never
+      probes:
+        enabled: true
 
 # SEC EDGAR API Configuration
 sec:

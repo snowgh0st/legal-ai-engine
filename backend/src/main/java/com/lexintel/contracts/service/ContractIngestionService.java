@@ -13,10 +13,12 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,8 +88,8 @@ public class ContractIngestionService {
                 .contractId(extracted.contractId())
                 .title(extracted.title())
                 .contractType(extracted.contractType())
-                .effectiveDate(extracted.effectiveDate() != null ? LocalDate.parse(extracted.effectiveDate()) : null)
-                .expirationDate(extracted.expirationDate() != null ? LocalDate.parse(extracted.expirationDate()) : null)
+                .effectiveDate(parseDateSafely(extracted.effectiveDate()))
+                .expirationDate(parseDateSafely(extracted.expirationDate()))
                 .governingLaw(extracted.governingLaw())
                 .parties(parties)
                 .clauses(clauses)
@@ -108,5 +110,16 @@ public class ContractIngestionService {
         auditLogRepository.save(auditLog);
 
         return savedContract;
+    }
+
+    private LocalDate parseDateSafely(String dateStr) {
+        if (!StringUtils.hasText(dateStr)) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(dateStr.trim());
+        } catch (DateTimeParseException e) {
+            return null;
+        }
     }
 }

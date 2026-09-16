@@ -1,7 +1,7 @@
-package com.lexintel.contracts;
+package com.lexintel;
 
 import com.lexintel.contracts.repository.ContractRepository;
-import com.lexintel.contracts.repository.jpa.DocumentAuditLogRepository;
+import com.lexintel.audit.repository.DocumentAuditLogRepository;
 import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
