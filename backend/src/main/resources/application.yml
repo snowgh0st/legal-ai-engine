@@ -59,6 +59,15 @@ spring:
       max-file-size: 50MB
       max-request-size: 50MB
 
+  # Spring Security Configuration
+  spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Clerk automatically publishes JWKS at <issuer-uri>/.well-known/jwks.json
+          issuer-uri: https://smooth-unicorn-1717.clerk.accounts.dev
+
 # Springdoc OpenAPI & Swagger UI Configuration
 springdoc:
   api-docs:
