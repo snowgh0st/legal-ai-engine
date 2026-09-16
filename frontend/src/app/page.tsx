@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useAuth, UserButton } from "@clerk/nextjs";
 import DynamicGraphCanvas from "@/components/GraphCanvas";
 import LegalChat from "@/components/LegalChat";
 import { 
@@ -9,6 +10,7 @@ import {
 } from "lucide-react";
 
 export default function LegalPortalDashboard() {
+  const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<"graph" | "chat">("chat");
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
@@ -19,7 +21,6 @@ export default function LegalPortalDashboard() {
     if (e.target.files && e.target.files[0]) {
       const selected = e.target.files[0];
       setFile(selected);
-      // Revoke previous object URL if existing to avoid memory leaks
       if (fileUrl) URL.revokeObjectURL(fileUrl);
       setFileUrl(URL.createObjectURL(selected));
       setIngestStatus(null);
@@ -35,10 +36,14 @@ export default function LegalPortalDashboard() {
     formData.append("file", file);
 
     try {
+      // 1. Retrieve short-lived Clerk JWT
+      const token = await getToken();
+
+      // 2. Pass Bearer token to Spring Boot Resource Server
       const res = await fetch("http://localhost:8080/api/v1/legal/contracts/ingest", {
         method: "POST",
         headers: {
-          "X-User-Id": "ANALYST_FRONTEND",
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
@@ -76,6 +81,11 @@ export default function LegalPortalDashboard() {
         <div className="flex items-center gap-4 text-xs font-mono text-slate-400">
           <span className="flex items-center gap-1.5"><Database className="w-3.5 h-3.5 text-emerald-400" /> Neo4j Bolt</span>
           <span className="flex items-center gap-1.5"><Database className="w-3.5 h-3.5 text-blue-400" /> PostgreSQL JPA</span>
+          
+          {/* Clerk Profile Menu */}
+          <div className="pl-2 border-l border-slate-800 flex items-center">
+            <UserButton />
+          </div>
         </div>
       </header>
 

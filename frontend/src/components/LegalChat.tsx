@@ -2,20 +2,40 @@
 
 import { useState } from 'react';
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { Bot, User, Send, Loader2, ShieldCheck, FileText } from 'lucide-react';
+import { useAuth } from "@clerk/nextjs";
 
 export default function LegalChat() {
-  const { messages, sendMessage, status } = useChat();
   const [input, setInput] = useState('');
+  const { getToken } = useAuth();
+
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({
+      api: 'http://localhost:8080/api/v1/rag/chat',
+      headers: async () => {
+        const token = await getToken();
+        return {
+          Authorization: `Bearer ${token}`,
+        };
+      },
+    }),
+  });
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    sendMessage({ text: input });
+    const userMessage = input;
     setInput('');
+
+    try {
+      await sendMessage({ text: userMessage });
+    } catch (error) {
+      console.error("Failed to send chat message:", error);
+    }
   };
 
   return (
@@ -51,11 +71,11 @@ export default function LegalChat() {
           messages.map((message) => {
             const isUser = message.role === 'user';
             
-            // Extract text parts from AI SDK UIMessage
+            // Text extraction from message parts
             const textContent = message.parts
-              .filter((part) => part.type === 'text')
+              ?.filter((part) => part.type === 'text')
               .map((part) => (part.type === 'text' ? part.text : ''))
-              .join('');
+              .join('') || '';
 
             return (
               <div
