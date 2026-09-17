@@ -60,7 +60,6 @@ spring:
       max-request-size: 50MB
 
   # Spring Security Configuration
-  spring:
   security:
     oauth2:
       resourceserver:
