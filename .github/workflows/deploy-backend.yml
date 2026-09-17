@@ -49,7 +49,8 @@ jobs:
         env:
           IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lexintel-repo/lexintel-backend:${{ github.sha }}
         run: |
-          docker build -t $IMAGE_TAG .
+          # Pass 'backend' as the context path where Dockerfile lives
+          docker build -t $IMAGE_TAG ./backend
           docker push $IMAGE_TAG
 
       - name: Deploy to Cloud Run
