@@ -1,4 +1,3 @@
-
 services:
   # ---------------------------------------------------------------------------
   # Database Infrastructure
@@ -60,7 +59,9 @@ services:
       - ./backend/.env
     ports:
       - "8080:8080"
+      - "5005:5005" # Remote Debugging Port
     environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
       - SPRING_DATASOURCE_URL=jdbc:postgresql://lexintel-postgres:5432/${POSTGRES_DB:-lexintel_audit_db}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}

@@ -7,6 +7,7 @@ import com.lexintel.audit.domain.DocumentAuditLog;
 import com.lexintel.contracts.dto.ContractExtractionResponse;
 import com.lexintel.contracts.repository.ContractRepository;
 import com.lexintel.audit.repository.DocumentAuditLogRepository;
+import com.lexintel.slack.service.SlackNotificationService;
 
 import org.apache.tika.Tika;
 import org.springframework.ai.chat.client.ChatClient;
@@ -30,16 +31,19 @@ public class ContractIngestionService {
     private final ContractRepository contractRepository;
     private final DocumentAuditLogRepository auditLogRepository;
     private final Tika tika = new Tika();
+    private final SlackNotificationService slackNotificationService;
 
     public ContractIngestionService(
             ChatClient.Builder chatClientBuilder,
             EmbeddingModel embeddingModel,
             ContractRepository contractRepository,
-            DocumentAuditLogRepository auditLogRepository) {
+            DocumentAuditLogRepository auditLogRepository,
+            SlackNotificationService slackNotificationService) {
         this.chatClient = chatClientBuilder.build();
         this.embeddingModel = embeddingModel;
         this.contractRepository = contractRepository;
         this.auditLogRepository = auditLogRepository;
+        this.slackNotificationService = slackNotificationService;
     }
 
     @Transactional("transactionManager")
@@ -108,6 +112,9 @@ public class ContractIngestionService {
                 .clauseCount(clauses.size())
                 .build();
         auditLogRepository.save(auditLog);
+
+        // 6. Notify Slack of Successful Ingestion
+        slackNotificationService.notifyContractIngested(savedContract);
 
         return savedContract;
     }
