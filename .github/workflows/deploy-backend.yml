@@ -1,0 +1,66 @@
+name: Deploy LexIntel Backend to GCP Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - 'src/**'
+      - 'pom.xml'
+      - 'Dockerfile'
+      - '.github/workflows/deploy-backend.yml'
+
+jobs:
+  deploy:
+    name: Build & Deploy Spring Boot
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write # Required for Workload Identity Federation
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Authorize Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev
+
+      - name: Build & Push Docker Image
+        env:
+          IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lexintel-repo/lexintel-backend:${{ github.sha }}
+        run: |
+          docker build -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: lexintel-backend
+          region: ${{ vars.GCP_REGION }}
+          image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lexintel-repo/lexintel-backend:${{ github.sha }}
+          env_vars: |
+            SPRING_PROFILES_ACTIVE=prod
+            NEO4J_URI=${{ secrets.NEO4J_URI }}
+            NEO4J_USERNAME=${{ secrets.NEO4J_USERNAME }}
+            NEO4J_PASSWORD=${{ secrets.NEO4J_PASSWORD }}
+          flags: '--allow-unauthenticated --port=8080 --memory=1Gi --cpu=1'
