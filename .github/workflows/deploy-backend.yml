@@ -47,7 +47,7 @@ jobs:
 
       - name: Build & Push Docker Image
         env:
-          IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lexintel-docker-repo/lexintel-backend:${{ github.sha }}
+          IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lexintel-repo/lexintel-backend:${{ github.sha }}
         run: |
           # Pass 'backend' as the context path where Dockerfile lives
           docker build -t $IMAGE_TAG ./backend
@@ -58,7 +58,7 @@ jobs:
         with:
           service: lexintel-backend
           region: ${{ vars.GCP_REGION }}
-          image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lexintel-docker-repo/lexintel-backend:${{ github.sha }}
+          image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lexintel-repo/lexintel-backend:${{ github.sha }}
           env_vars: |
             SPRING_PROFILES_ACTIVE=prod
             CLERK_ISSUER_URI=${{ secrets.CLERK_ISSUER_URI }}
