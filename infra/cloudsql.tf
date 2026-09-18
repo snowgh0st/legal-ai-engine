@@ -22,7 +22,7 @@ resource "google_sql_database_instance" "postgres" {
 }
 
 resource "google_sql_database" "database" {
-  name     = "lexintel_audit_db"
+  name     = "audit_db"
   instance = google_sql_database_instance.postgres.name
 }
 

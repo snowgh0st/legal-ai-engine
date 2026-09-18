@@ -34,7 +34,7 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SA_TERRAFORM_KEY }}
+          service_account: ${{ secrets.GCP_SA_TERRAFORM_EMAIL }}
     
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -53,9 +53,9 @@ jobs:
       - name: Terraform Plan
         id: plan
         env:
-          TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
-          TF_VAR_db_password: ${{ secrets.POSTGRES_PASSWORD }}
-          TF_VAR_neo4j_password: ${{ secrets.NEO4J_PASSWORD }}
+          TF_VAR_gcp_project_id: ${{ vars.GCP_PROJECT_ID }}
+          TF_VAR_db_password: ${{ secrets.AUDIT_DB_PASSWORD }}
+          TF_VAR_neo4j_password: ${{ secrets.CONTRACTS_SEC_NEO4J_PASSWORD }}
           TF_VAR_local_ip_address: "${{ secrets.MY_LOCAL_IP }}/32"
         run: terraform plan -no-color -out=tfplan
 
