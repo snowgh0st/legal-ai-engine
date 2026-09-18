@@ -5,9 +5,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.time.Duration;
+
 
 @Service
 public class SlackNotificationService {
@@ -18,10 +21,10 @@ public class SlackNotificationService {
     public SlackNotificationService(@Value("${slack.webhook.url:}") String webhookUrl) {
         this.webhookUrl = webhookUrl;
 
-        // Set 3-second connection and read timeouts so Slack issues never freeze backend threads
+        // Set 5-second connection and read timeouts so Slack issues never freeze backend threads
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout((int) Duration.ofSeconds(3).toMillis());
-        requestFactory.setReadTimeout((int) Duration.ofSeconds(3).toMillis());
+        requestFactory.setConnectTimeout(Duration.ofSeconds(5));
+        requestFactory.setReadTimeout(Duration.ofSeconds(5));
 
         this.restClient = RestClient.builder().requestFactory(requestFactory).build();
     }

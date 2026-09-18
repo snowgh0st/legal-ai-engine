@@ -36,7 +36,7 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SA_APP_DEPLOYER_KEY }}
+          service_account: ${{ secrets.GCP_SA_APP_DEPLOYER_EMAIL }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -47,7 +47,7 @@ jobs:
 
       - name: Build & Push Docker Image
         env:
-          IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lexintel-repo/lexintel-backend:${{ github.sha }}
+          IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lexintel-docker-repo/lexintel-backend:${{ github.sha }}
         run: |
           # Pass 'backend' as the context path where Dockerfile lives
           docker build -t $IMAGE_TAG ./backend
@@ -58,12 +58,21 @@ jobs:
         with:
           service: lexintel-backend
           region: ${{ vars.GCP_REGION }}
-          image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lexintel-repo/lexintel-backend:${{ github.sha }}
+          image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lexintel-docker-repo/lexintel-backend:${{ github.sha }}
           env_vars: |
             SPRING_PROFILES_ACTIVE=prod
-            NEO4J_URI=${{ secrets.NEO4J_URI }}
-            NEO4J_USERNAME=${{ secrets.NEO4J_USERNAME }}
-            NEO4J_PASSWORD=${{ secrets.NEO4J_PASSWORD }}
             CLERK_ISSUER_URI=${{ secrets.CLERK_ISSUER_URI }}
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-          flags: '--allow-unauthenticated --port=8080 --memory=1Gi --cpu=1'
+            SPRING_DATASOURCE_URL=jdbc:postgresql:///audit_db?socketFactory=com.google.cloud.sql.postgres.SocketFactory&cloudSqlInstance=${{ vars.GCP_PROJECT_ID }}:${{ vars.GCP_REGION }}:lexintel-postgres-instance
+            SPRING_NEO4J_URI=bolt://10.0.1.5:7687
+          secrets: |
+            OPENAI_API_KEY=OPENAI_API_KEY:latest
+            SPRING_DATASOURCE_PASSWORD=AUDIT_DB_PASSWORD:latest
+            SPRING_NEO4J_PASSWORD=NEO4J_PASSWORD:latest
+          flags: |
+            --allow-unauthenticated
+            --port=8080
+            --memory=1Gi
+            --cpu=1
+            --vpc-connector=lexintel-vpc-connector
+            --vpc-egress=private-ranges-only
+            --add-cloudsql-instances=${{ vars.GCP_PROJECT_ID }}:${{ vars.GCP_REGION }}:lexintel-postgres-instance

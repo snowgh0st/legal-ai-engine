@@ -23,9 +23,9 @@ spring:
 
   # Relational Database (PostgreSQL)
   datasource:
-    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/lexintel_audit_db}
-    username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -36,10 +36,10 @@ spring:
 
   # Graph Database (Neo4j Connection)
   neo4j:
-    uri: ${NEO4J_URI:bolt://localhost:7687}
+    uri: ${SPRING_NEO4J_URI:bolt://localhost:7687}
     authentication:
-      username: ${NEO4J_USER:neo4j}
-      password: ${NEO4J_PASSWORD}
+      username: ${SPRING_NEO4J_USERNAME:neo4j}
+      password: ${SPRING_NEO4J_PASSWORD}
 
   # Spring AI (OpenAI Integration)
   ai:
