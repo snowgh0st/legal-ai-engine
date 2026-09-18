@@ -1,7 +1,7 @@
 resource "google_compute_instance" "neo4j_vm" {
   name         = "lexintel-neo4j-vm"
   machine_type = "e2-small"
-  zone         = "${var.gcp_region}-a"
+  zone         = "${var.gcp_region}-b"
 
   boot_disk {
     initialize_params {
