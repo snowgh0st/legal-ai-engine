@@ -75,3 +75,30 @@ yarn-error.log*
 # ==========================================
 __azurite_db*
 azuriteconfig.json
+
+# ==========================================
+# Local Terraform directory
+# ==========================================
+infra/.terraform/
+
+# ==========================================
+# State files (if created locally by mistake)
+# ==========================================
+*.tfstate
+*.tfstate.*
+
+# ==========================================
+# Crash logs
+# ==========================================
+crash.log
+crash.*.log
+
+# ==========================================
+# Exclude sensitive variables
+# ==========================================
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
