@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   if (pathname.startsWith('/api/')) {
@@ -11,8 +12,23 @@ export function proxy(request: NextRequest) {
       return new NextResponse('Backend URL not configured', { status: 500 });
     }
 
+    // Extract active Clerk session token
+    const { getToken } = await auth();
+    const token = await getToken();
+
     const targetUrl = new URL(pathname + search, backendUrl);
-    return NextResponse.rewrite(targetUrl);
+    
+    // Create requested headers and pass Bearer token to Cloud Run
+    const requestHeaders = new Headers(request.headers);
+    if (token) {
+      requestHeaders.set('Authorization', `Bearer ${token}`);
+    }
+
+    return NextResponse.rewrite(targetUrl, {
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   return NextResponse.next();
