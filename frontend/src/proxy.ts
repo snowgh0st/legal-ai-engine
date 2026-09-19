@@ -12,10 +12,16 @@ export default clerkMiddleware(async (auth, req) => {
       return new NextResponse('Backend URL not configured', { status: 500 });
     }
 
-    // Extract the Clerk session token (JWT)
-    const { getToken } = await auth();
-    const token = await getToken();
+    // 1. Check if the client already sent an Authorization header
+    let token = req.headers.get('authorization')?.replace('Bearer ', '');
 
+    // 2. If not provided by client, try extracting from Clerk session
+    if (!token) {
+      const { getToken } = await auth();
+      token = (await getToken()) || undefined;
+    }
+
+    // 3. If still no token, reject request
     if (!token) {
       return new NextResponse('Unauthorized: Missing Clerk Session Token', { status: 401 });
     }
@@ -23,7 +29,7 @@ export default clerkMiddleware(async (auth, req) => {
     const cleanBackendUrl = backendUrl.replace(/\/$/, '');
     const targetUrl = new URL(pathname + search, cleanBackendUrl);
 
-    // Attach Bearer token to forwarded request headers
+    // Forward request with Bearer token attached
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set('Authorization', `Bearer ${token}`);
 
