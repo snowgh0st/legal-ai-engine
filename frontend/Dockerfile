@@ -13,9 +13,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Set production environment and build
+# Set production environment and enable conditional standalone build
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
+ENV BUILD_STANDALONE true
 
 RUN npm run build
 
