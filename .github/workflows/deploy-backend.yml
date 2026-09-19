@@ -64,7 +64,7 @@ jobs:
             CLERK_ISSUER_URI=${{ secrets.CLERK_ISSUER_URI }}
             SPRING_DATASOURCE_USERNAME=postgres
             SPRING_DATASOURCE_URL=jdbc:postgresql:///audit_db?socketFactory=com.google.cloud.sql.postgres.SocketFactory&cloudSqlInstance=${{ vars.GCP_PROJECT_ID }}:${{ vars.GCP_REGION }}:lexintel-postgres-instance
-            SPRING_NEO4J_URI=bolt://10.0.1.5:7687
+            SPRING_NEO4J_URI=bolt://10.142.0.2:7687
           secrets: |
             OPENAI_API_KEY=OPENAI_API_KEY:latest
             SPRING_AI_OPENAI_API_KEY=OPENAI_API_KEY:latest
