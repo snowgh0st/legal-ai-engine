@@ -80,6 +80,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Google Cloud SQL Socket Factory for PostgreSQL -->
+        <dependency>
+            <groupId>com.google.cloud.sql</groupId>
+            <artifactId>postgres-socket-factory</artifactId>
+            <version>1.20.1</version>
+        </dependency>
+
         <!-- Lombok for Boilerplate Reduction -->
         <dependency>
             <groupId>org.projectlombok</groupId>
