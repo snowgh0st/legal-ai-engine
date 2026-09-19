@@ -40,7 +40,7 @@ export default function LegalPortalDashboard() {
       const token = await getToken();
 
       // 2. Pass Bearer token to Spring Boot Resource Server
-      const res = await fetch("http://localhost:8080/api/v1/legal/contracts/ingest", {
+      const res = await fetch("/api/v1/legal/contracts/ingest", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
