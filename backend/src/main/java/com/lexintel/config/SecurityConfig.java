@@ -20,11 +20,11 @@ public class SecurityConfig {
                 // Public endpoints
                 .requestMatchers("/actuator/health/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // Require valid Clerk JWT for all functional business routes
-                .requestMatchers("/api/v1/**").authenticated()
-                .anyRequest().authenticated()
-            )
+                // .requestMatchers("/api/v1/**").authenticated() // COMMENTED OUT
+                .anyRequest().permitAll() // CHANGED FROM .authenticated()
+            );
             // Validate incoming Bearer tokens using Clerk's JWKS
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+            // .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults())); // COMMENTED OUT
 
         return http.build();
     }
