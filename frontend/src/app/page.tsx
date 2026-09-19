@@ -37,7 +37,7 @@ export default function LegalPortalDashboard() {
 
     try {
       // 1. Retrieve short-lived Clerk JWT
-      const token = await getToken();
+      const token = await getToken({ template: "spring-boot" });
 
       // 2. Pass Bearer token to Spring Boot Resource Server
       const res = await fetch("/api/v1/legal/contracts/ingest", {

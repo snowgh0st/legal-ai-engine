@@ -1,4 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai';
+import { auth } from '@clerk/nextjs/server';
 import {
   streamText,
   createUIMessageStreamResponse,
@@ -31,15 +32,32 @@ export async function POST(req: Request) {
   // 1. Fetch deterministic Neo4j graph context from Spring Boot
   let graphContext = '';
   try {
-    const backendUrl = process.env.SPRING_BACKEND_URL || 'http://localhost:8080';
-    const ragResponse = await fetch(`${backendUrl}/api/v1/rag/context`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: userQuery }),
-    });
+    const backendUrl =
+      process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
 
-    if (ragResponse.ok) {
-      graphContext = await ragResponse.text();
+    if (backendUrl) {
+      const cleanBackendUrl = backendUrl.replace(/\/$/, '');
+
+      // Extract Clerk JWT session token on server-side
+      const { getToken } = await auth();
+      const token = await getToken();
+
+      const ragResponse = await fetch(`${cleanBackendUrl}/api/v1/rag/context`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({ question: userQuery }),
+      });
+
+      if (ragResponse.ok) {
+        graphContext = await ragResponse.text();
+      } else {
+        console.warn(
+          `Spring Boot RAG context returned status ${ragResponse.status}`
+        );
+      }
     }
   } catch (err) {
     console.warn('Spring Boot backend unavailable for graph context:', err);
@@ -69,19 +87,25 @@ If a user asks about a company's SEC filings, regulatory disclosures, or 10-K ri
        * Searches SEC EDGAR's company mapping ticker list to resolve names or tickers into 10-digit CIKs.
        */
       secCompanyLookup: tool({
-        description: 'Lookup official SEC CIK number and company entity details by ticker or company name.',
+        description:
+          'Lookup official SEC CIK number and company entity details by ticker or company name.',
         inputSchema: z.object({
-          identifier: z.string().describe('Stock ticker (e.g., AAPL, MSFT) or company name'),
+          identifier: z
+            .string()
+            .describe('Stock ticker (e.g., AAPL, MSFT) or company name'),
         }),
         execute: async ({ identifier }) => {
           try {
             // Fetch official SEC ticker-to-CIK mapping JSON
-            const secRes = await fetch('https://www.sec.gov/files/company_tickers.json', {
-              headers: {
-                'User-Agent': 'LexIntel Compliance Engine legal@lexintel.com', // SEC mandate: AppName email
-                'Accept-Encoding': 'gzip, deflate',
-              },
-            });
+            const secRes = await fetch(
+              'https://www.sec.gov/files/company_tickers.json',
+              {
+                headers: {
+                  'User-Agent': 'LexIntel Compliance Engine legal@lexintel.com', // SEC mandate: AppName email
+                  'Accept-Encoding': 'gzip, deflate',
+                },
+              }
+            );
 
             if (!secRes.ok) {
               return { error: `SEC API returned status ${secRes.status}` };
@@ -100,7 +124,10 @@ If a user asks about a company's SEC filings, regulatory disclosures, or 10-K ri
             });
 
             if (!matchedKey) {
-              return { found: false, message: `No SEC entity found matching identifier '${identifier}'` };
+              return {
+                found: false,
+                message: `No SEC entity found matching identifier '${identifier}'`,
+              };
             }
 
             const match = companyData[matchedKey];
@@ -113,7 +140,10 @@ If a user asks about a company's SEC filings, regulatory disclosures, or 10-K ri
               companyName: match.title,
             };
           } catch (error) {
-            return { error: 'Failed to communicate with SEC EDGAR API', details: String(error) };
+            return {
+              error: 'Failed to communicate with SEC EDGAR API',
+              details: String(error),
+            };
           }
         },
       }),
@@ -123,10 +153,16 @@ If a user asks about a company's SEC filings, regulatory disclosures, or 10-K ri
        * Retrieves recent 10-K, 10-Q, or 8-K submission metadata for a given CIK.
        */
       getRecentSecFilings: tool({
-        description: 'Fetch recent SEC submission filings (10-K, 10-Q, 8-K) for a specific company CIK number.',
+        description:
+          'Fetch recent SEC submission filings (10-K, 10-Q, 8-K) for a specific company CIK number.',
         inputSchema: z.object({
-          cik: z.string().describe('10-digit padded CIK number (e.g. 0000320193)'),
-          formType: z.enum(['10-K', '10-Q', '8-K', 'ALL']).optional().default('10-K'),
+          cik: z
+            .string()
+            .describe('10-digit padded CIK number (e.g. 0000320193)'),
+          formType: z
+            .enum(['10-K', '10-Q', '8-K', 'ALL'])
+            .optional()
+            .default('10-K'),
         }),
         execute: async ({ cik, formType }) => {
           try {
@@ -141,19 +177,28 @@ If a user asks about a company's SEC filings, regulatory disclosures, or 10-K ri
             });
 
             if (!res.ok) {
-              return { error: `SEC Submissions API returned status ${res.status}` };
+              return {
+                error: `SEC Submissions API returned status ${res.status}`,
+              };
             }
 
             const data = await res.json();
             const recentFilings = data.filings?.recent;
 
             if (!recentFilings || !recentFilings.form) {
-              return { found: false, message: 'No recent submission history found.' };
+              return {
+                found: false,
+                message: 'No recent submission history found.',
+              };
             }
 
             // Extract matching forms
             const results = [];
-            for (let i = 0; i < recentFilings.form.length && results.length < 5; i++) {
+            for (
+              let i = 0;
+              i < recentFilings.form.length && results.length < 5;
+              i++
+            ) {
               const form = recentFilings.form[i];
               if (formType === 'ALL' || form === formType) {
                 results.push({
@@ -174,7 +219,10 @@ If a user asks about a company's SEC filings, regulatory disclosures, or 10-K ri
               filings: results,
             };
           } catch (error) {
-            return { error: 'Failed to fetch SEC submissions', details: String(error) };
+            return {
+              error: 'Failed to fetch SEC submissions',
+              details: String(error),
+            };
           }
         },
       }),

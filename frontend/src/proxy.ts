@@ -1,27 +1,45 @@
+import { clerkMiddleware } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 
-export function proxy(request: NextRequest) {
-  const { pathname, search } = request.nextUrl;
+export default clerkMiddleware(async (auth, req) => {
+  const { pathname, search } = req.nextUrl;
 
+  // Intercept all backend API calls
   if (pathname.startsWith('/api/')) {
     const backendUrl = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
 
     if (!backendUrl) {
-      console.error('BACKEND_API_URL is missing!');
       return new NextResponse('Backend URL not configured', { status: 500 });
     }
 
-    // Strip trailing slash if present
+    // Extract the Clerk session token (JWT)
+    const { getToken } = await auth();
+    const token = await getToken();
+
+    if (!token) {
+      return new NextResponse('Unauthorized: Missing Clerk Session Token', { status: 401 });
+    }
+
     const cleanBackendUrl = backendUrl.replace(/\/$/, '');
     const targetUrl = new URL(pathname + search, cleanBackendUrl);
 
-    return NextResponse.rewrite(targetUrl);
+    // Attach Bearer token to forwarded request headers
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set('Authorization', `Bearer ${token}`);
+
+    return NextResponse.rewrite(targetUrl, {
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
-  matcher: ['/api/:path*'],
+  matcher: [
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jwt|png|jpg|webp|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
+  ],
 };
