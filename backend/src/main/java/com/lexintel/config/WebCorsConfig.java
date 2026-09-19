@@ -15,6 +15,11 @@ public class WebCorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedOriginPatterns("*")
+                        .allowedOrigins(
+                            "http://localhost:3000",
+                            "https://*.vercel.app",
+                            "https://your-custom-domain.com"
+                        )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
