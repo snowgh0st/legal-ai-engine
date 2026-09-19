@@ -66,6 +66,7 @@ jobs:
             SPRING_NEO4J_URI=bolt://10.0.1.5:7687
           secrets: |
             OPENAI_API_KEY=OPENAI_API_KEY:latest
+            SPRING_AI_OPENAI_API_KEY=OPENAI_API_KEY:latest
             SPRING_DATASOURCE_PASSWORD=AUDIT_DB_PASSWORD:latest
             SPRING_NEO4J_PASSWORD=NEO4J_PASSWORD:latest
           flags: |
