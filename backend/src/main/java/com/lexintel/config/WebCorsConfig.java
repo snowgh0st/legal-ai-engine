@@ -18,7 +18,7 @@ public class WebCorsConfig {
                         .allowedOrigins(
                             "http://localhost:3000",
                             "https://*.vercel.app",
-                            "https://your-custom-domain.com"
+                            "https://legal-ai-engine-seven.vercel.app/"
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
