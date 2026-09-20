@@ -19,19 +19,26 @@ public class SecurityConfig {
     private String issuerUri;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable())
-            .cors(Customizer.withDefaults())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/health/**", "/swagger-ui/**", "/v3/api-docs/**", "/admin/**").permitAll()
-                .requestMatchers("/api/v1/**").authenticated()
-                .anyRequest().authenticated()
-            )
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+            http
+                .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
+                .authorizeHttpRequests(auth -> auth
+                    // 1. Publicly accessible endpoints (Preflight OPTIONS, health checks, Swagger docs)
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    .requestMatchers("/actuator/health/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-        return http.build();
-    }
+                    // 2. Protected administrative & business API endpoints
+                    .requestMatchers("/admin/**").authenticated() // or .hasRole("ADMIN") if using role claims
+                    .requestMatchers("/api/v1/**").authenticated()
+
+                    // 3. Fallback rule for all other endpoints
+                    .anyRequest().authenticated()
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+
+            return http.build();
+        }
 
     @Bean
     public JwtDecoder jwtDecoder() {
