@@ -19,10 +19,12 @@ public class RagSearchController {
 
     private final RagSearchService ragSearchService;
     private final SecIngestionService secIngestionService;
+    private final ObjectMapper objectMapper;
 
     public RagSearchController(RagSearchService ragSearchService, SecIngestionService secIngestionService) {
         this.ragSearchService = ragSearchService;
         this.secIngestionService = secIngestionService;
+        this.objectMapper = new ObjectMapper();
     }
 
     /**
