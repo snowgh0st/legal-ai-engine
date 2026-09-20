@@ -27,7 +27,7 @@ export default function LegalChat() {
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
