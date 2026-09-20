@@ -7,7 +7,13 @@ spring:
     admin:
       context-path: /admin
       client:
-        url: http://localhost:8080/admin
+        # Disable auto-registration in production, or override via env var
+        enabled: ${SPRING_BOOT_ADMIN_CLIENT_ENABLED:false}
+        url: ${SPRING_BOOT_ADMIN_CLIENT_URL:http://localhost:8080}
+        instance:
+          service-base-url: ${SPRING_BOOT_ADMIN_CLIENT_SERVICE_URL:http://localhost:8080}
+          management-url: ${SPRING_BOOT_ADMIN_CLIENT_MANAGEMENT_URL:http://localhost:8080/actuator}
+          health-url: ${SPRING_BOOT_ADMIN_CLIENT_HEALTH_URL:http://localhost:8080/actuator/health}
   
   # Spring Configuration Import from .env or .properties
   config:
