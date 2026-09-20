@@ -74,11 +74,14 @@ export default function LegalChat() {
           messages.map((message) => {
             const isUser = message.role === 'user';
             
-            // Text extraction from message parts
-            const textContent = message.parts
-              ?.filter((part) => part.type === 'text')
-              .map((part) => (part.type === 'text' ? part.text : ''))
-              .join('') || '';
+            // Safely extract text across Vercel AI SDK versions
+            const textContent =
+              message.parts
+                ?.filter((part) => part.type === 'text')
+                .map((part) => part.text)
+                .join('') ||
+              (message as unknown as { content?: string }).content ||
+              '';
 
             return (
               <div
