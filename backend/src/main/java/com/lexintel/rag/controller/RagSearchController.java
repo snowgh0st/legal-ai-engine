@@ -3,7 +3,7 @@ package com.lexintel.rag.controller;
 import com.lexintel.rag.dto.RagSearchRequest;
 import com.lexintel.rag.dto.RagSearchResponse;
 import com.lexintel.rag.service.RagSearchService;
-import com.lexintel.service.SecIngestionService;
+import com.lexintel.sec.service.SecIngestionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
