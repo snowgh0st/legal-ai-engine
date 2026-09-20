@@ -12,11 +12,14 @@ export default function LegalChat() {
 
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
-      api: 'http://localhost:8080/api/v1/rag/chat',
-      headers: async () => {
-        const token = await getToken();
+      api: '/api/v1/rag/chat',
+      headers: async (): Promise<Record<string, string>> => {
+        const token = await getToken({ skipCache: true });
+        if (!token) return {};
+
+        const authHeader = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
         return {
-          Authorization: `Bearer ${token}`,
+          Authorization: authHeader,
         };
       },
     }),
