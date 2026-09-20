@@ -12,26 +12,35 @@ export default clerkMiddleware(async (auth, req) => {
       return new NextResponse('Backend URL not configured', { status: 500 });
     }
 
-    // 1. Check if the client already sent an Authorization header
-    let token = req.headers.get('authorization')?.replace('Bearer ', '');
+    // 1. Extract raw Authorization header from incoming client request
+    const rawAuthHeader = req.headers.get('authorization');
+    let rawToken: string | null = null;
 
-    // 2. If not provided by client, try extracting from Clerk session
-    if (!token) {
-      const { getToken } = await auth();
-      token = (await getToken()) || undefined;
+    if (rawAuthHeader) {
+      // Strip any number of "Bearer " prefixes (case-insensitive)
+      rawToken = rawAuthHeader.replace(/^Bearer\s+/i, '').trim();
     }
 
-    // 3. If still no token, reject request
-    if (!token) {
+    // 2. If no valid header token present, extract from Clerk session
+    if (!rawToken) {
+      const { getToken } = await auth();
+      const sessionToken = await getToken();
+      if (sessionToken) {
+        rawToken = sessionToken.replace(/^Bearer\s+/i, '').trim();
+      }
+    }
+
+    // 3. Reject if no token found or if token is explicitly empty/null string
+    if (!rawToken || rawToken === 'null' || rawToken === 'undefined') {
       return new NextResponse('Unauthorized: Missing Clerk Session Token', { status: 401 });
     }
 
     const cleanBackendUrl = backendUrl.replace(/\/$/, '');
     const targetUrl = new URL(pathname + search, cleanBackendUrl);
 
-    // Forward request with Bearer token attached
+    // Guard against duplicated 'Bearer ' when forwarding to Cloud Run
     const requestHeaders = new Headers(req.headers);
-    requestHeaders.set('Authorization', `Bearer ${token}`);
+    requestHeaders.set('Authorization', `Bearer ${rawToken}`);
 
     return NextResponse.rewrite(targetUrl, {
       request: {

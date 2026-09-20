@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth, UserButton } from "@clerk/nextjs";
 import DynamicGraphCanvas from "@/components/GraphCanvas";
 import LegalChat from "@/components/LegalChat";
@@ -16,6 +16,15 @@ export default function LegalPortalDashboard() {
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [ingestStatus, setIngestStatus] = useState<string | null>(null);
+
+  // Clean up Object URL when component unmounts to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (fileUrl) {
+        URL.revokeObjectURL(fileUrl);
+      }
+    };
+  }, [fileUrl]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -37,13 +46,21 @@ export default function LegalPortalDashboard() {
 
     try {
       // 1. Retrieve short-lived Clerk JWT
-      const token = await getToken({ template: "spring-boot" });
+      const token = await getToken();
 
-      // 2. Pass Bearer token to Spring Boot Resource Server
+      // 2. Ensure token is available or throw to trigger catch/finally
+      if (!token) {
+        throw new Error("Authentication failed: No active session found.");
+      }
+
+      // 3. Guarantee 'Bearer ' is prefixed cleanly without duplication
+      const authHeader = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
+
+      // 4. Pass Bearer token to Spring Boot Resource Server via Next.js Proxy
       const res = await fetch("/api/v1/legal/contracts/ingest", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: authHeader,
         },
         body: formData,
       });
@@ -114,7 +131,7 @@ export default function LegalPortalDashboard() {
               </button>
             </div>
             {ingestStatus && (
-              <p className="text-[11px] font-mono text-indigo-300 bg-indigo-950/50 border border-indigo-900/50 p-2 rounded">
+              <p className="text-[11px] font-mono text-indigo-300 bg-indigo-950/50 border border-indigo-900/50 p-2 rounded break-words">
                 {ingestStatus}
               </p>
             )}
