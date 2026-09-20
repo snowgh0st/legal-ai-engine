@@ -1,5 +1,6 @@
 package com.lexintel.rag.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper; // <--- MISSING IMPORT
 import com.lexintel.rag.dto.RagSearchRequest;
 import com.lexintel.rag.dto.RagSearchResponse;
 import com.lexintel.rag.service.RagSearchService;
@@ -21,37 +22,39 @@ public class RagSearchController {
     private final SecIngestionService secIngestionService;
     private final ObjectMapper objectMapper;
 
-    public RagSearchController(RagSearchService ragSearchService, SecIngestionService secIngestionService) {
+    public RagSearchController(
+            RagSearchService ragSearchService, 
+            SecIngestionService secIngestionService, 
+            ObjectMapper objectMapper) {
         this.ragSearchService = ragSearchService;
         this.secIngestionService = secIngestionService;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = objectMapper;
     }
 
     /**
-     * Streaming SSE endpoint invoked by Next.js proxy / LegalChat
+     * Streaming SSE endpoint formatted for Vercel AI SDK (0:"chunk"\n)
      */
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-        public Flux<String> streamRagChat(@RequestBody RagSearchRequest request) {
-            log.info("Received streaming RAG chat request: {}", request.question());
+    public Flux<String> streamRagChat(@RequestBody RagSearchRequest request) {
+        log.info("Received streaming RAG chat request: {}", request.question());
 
-            if (request.question() == null || request.question().isBlank()) {
-                return Flux.empty();
-            }
-
-            // Format each chunk as Vercel AI SDK protocol part: 0:"text"\n
-            return ragSearchService.streamAnswerWithSecContext(request.question())
-                    .map(chunk -> {
-                        try {
-                            return "0:" + objectMapper.writeValueAsString(chunk) + "\n";
-                        } catch (Exception e) {
-                            return "0:\"\"\n";
-                        }
-                    })
-                    .onErrorResume(e -> {
-                        log.error("Error streaming chat response", e);
-                        return Flux.just("0:\"Error processing request: " + e.getMessage() + "\"\n");
-                    });
+        if (request.question() == null || request.question().isBlank()) {
+            return Flux.empty();
         }
+
+        return ragSearchService.streamAnswerWithSecContext(request.question())
+                .map(chunk -> {
+                    try {
+                        return "0:" + objectMapper.writeValueAsString(chunk) + "\n";
+                    } catch (Exception e) {
+                        return "0:\"\"\n";
+                    }
+                })
+                .onErrorResume(e -> {
+                    log.error("Error streaming chat response", e);
+                    return Flux.just("0:\"Error processing request: " + e.getMessage() + "\"\n");
+                });
+    }
 
     @PostMapping("/query")
     public ResponseEntity<RagSearchResponse> queryRagContext(@RequestBody RagSearchRequest request) {
