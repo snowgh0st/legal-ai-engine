@@ -29,20 +29,27 @@ public class RagSearchController {
      * Streaming SSE endpoint invoked by Next.js proxy / LegalChat
      */
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> streamRagChat(@RequestBody RagSearchRequest request) {
-        log.info("Received streaming RAG chat request: {}", request.question());
+        public Flux<String> streamRagChat(@RequestBody RagSearchRequest request) {
+            log.info("Received streaming RAG chat request: {}", request.question());
 
-        if (request.question() == null || request.question().isBlank()) {
-            return Flux.empty();
-        }
+            if (request.question() == null || request.question().isBlank()) {
+                return Flux.empty();
+            }
 
-        try {
-            return ragSearchService.streamAnswerWithSecContext(request.question());
-        } catch (Exception e) {
-            log.error("Error streaming chat response for query: {}", request.question(), e);
-            return Flux.just("Error processing chat query: " + e.getMessage());
+            // Format each chunk as Vercel AI SDK protocol part: 0:"text"\n
+            return ragSearchService.streamAnswerWithSecContext(request.question())
+                    .map(chunk -> {
+                        try {
+                            return "0:" + objectMapper.writeValueAsString(chunk) + "\n";
+                        } catch (Exception e) {
+                            return "0:\"\"\n";
+                        }
+                    })
+                    .onErrorResume(e -> {
+                        log.error("Error streaming chat response", e);
+                        return Flux.just("0:\"Error processing request: " + e.getMessage() + "\"\n");
+                    });
         }
-    }
 
     @PostMapping("/query")
     public ResponseEntity<RagSearchResponse> queryRagContext(@RequestBody RagSearchRequest request) {
