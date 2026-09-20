@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useAuth, UserButton } from "@clerk/nextjs";
+import { useAuth, useClerk, UserButton } from "@clerk/nextjs";
 import DynamicGraphCanvas from "@/components/GraphCanvas";
 import LegalChat from "@/components/LegalChat";
 import { 
@@ -11,6 +11,7 @@ import {
 
 export default function LegalPortalDashboard() {
   const { getToken } = useAuth();
+  const { redirectToSignIn } = useClerk();
   const [activeTab, setActiveTab] = useState<"graph" | "chat">("chat");
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
@@ -45,18 +46,19 @@ export default function LegalPortalDashboard() {
     formData.append("file", file);
 
     try {
-      // 1. Retrieve short-lived Clerk JWT
-      const token = await getToken();
+      // 1. Force retrieval of a fresh short-lived Clerk JWT
+      const token = await getToken({ skipCache: true });
 
-      // 2. Ensure token is available or throw to trigger catch/finally
+      // 2. Ensure token is available or redirect
       if (!token) {
-        throw new Error("Authentication failed: No active session found.");
+        redirectToSignIn();
+        return;
       }
 
-      // 3. Guarantee 'Bearer ' is prefixed cleanly without duplication
+      // 3. Guarantee 'Bearer ' is prefixed cleanly
       const authHeader = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
 
-      // 4. Pass Bearer token to Spring Boot Resource Server via Next.js Proxy
+      // 4. Pass Bearer token to Spring Boot via Next.js Proxy
       const res = await fetch("/api/v1/legal/contracts/ingest", {
         method: "POST",
         headers: {
@@ -64,6 +66,12 @@ export default function LegalPortalDashboard() {
         },
         body: formData,
       });
+
+      if (res.status === 401) {
+        // Session expired upstream
+        redirectToSignIn();
+        return;
+      }
 
       if (!res.ok) {
         const errorText = await res.text();
