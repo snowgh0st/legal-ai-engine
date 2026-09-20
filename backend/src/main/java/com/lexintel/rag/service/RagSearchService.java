@@ -1,12 +1,14 @@
 package com.lexintel.rag.service;
 
 import com.lexintel.rag.dto.RagSearchResponse;
+import com.lexintel.sec.service.SecIngestionService;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.Map;
@@ -18,10 +20,41 @@ public class RagSearchService {
 
     private final Driver neo4jDriver;
     private final ChatClient chatClient;
+    private final SecIngestionService secIngestionService;
 
-    public RagSearchService(Driver neo4jDriver, ChatClient.Builder chatClientBuilder) {
+    public RagSearchService(
+            Driver neo4jDriver, 
+            ChatClient.Builder chatClientBuilder,
+            SecIngestionService secIngestionService
+    ) {
         this.neo4jDriver = neo4jDriver;
         this.chatClient = chatClientBuilder.build();
+        this.secIngestionService = secIngestionService;
+    }
+
+    /**
+     * Streams answers using combined Neo4j graph context and SEC EDGAR tool disclosures.
+     */
+    public Flux<String> streamAnswerWithSecContext(String question) {
+        String graphContext = retrieveContext(question);
+
+        return chatClient.prompt()
+                .system("""
+                    You are LexIntel, an enterprise legal compliance and regulatory AI assistant.
+                    Synthesize your analysis using both internal contract graph context and public SEC filing disclosures.
+                    If the user asks about SEC filings, risk factors, or 10-K/10-Q documents, use your tools to query the SEC EDGAR service.
+                    """)
+                .user(u -> u.text("""
+                    Internal Contract Knowledge Graph Context:
+                    {context}
+
+                    User Compliance Query:
+                    {question}
+                    """)
+                    .param("context", graphContext)
+                    .param("question", question))
+                .stream()
+                .content();
     }
 
     /**
@@ -105,12 +138,10 @@ public class RagSearchService {
 
     private String extractSearchTerm(String question) {
         if (question == null || question.isBlank()) return "";
-        // Strips common stop words to improve basic Cypher matching
         return question.replaceAll("(?i)\\b(what|is|are|the|in|for|and|or|of|clause|section)\\b", "").trim();
     }
 
     private String retrieveFallbackContext() {
-        // Fallback Cypher execution returning top 5 clauses if keyword search misses
         String fallbackQuery = """
             MATCH (c:Contract)-[:HAS_CLAUSE]->(cl:Clause)
             RETURN c.title AS contractTitle, cl.clauseType AS clauseType, cl.rawText AS clauseText

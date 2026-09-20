@@ -3,22 +3,45 @@ package com.lexintel.rag.controller;
 import com.lexintel.rag.dto.RagSearchRequest;
 import com.lexintel.rag.dto.RagSearchResponse;
 import com.lexintel.rag.service.RagSearchService;
+import com.lexintel.service.SecIngestionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/api/v1/rag")
-@CrossOrigin(origins = "http://localhost:3000")
 public class RagSearchController {
 
     private static final Logger log = LoggerFactory.getLogger(RagSearchController.class);
 
     private final RagSearchService ragSearchService;
+    private final SecIngestionService secIngestionService;
 
-    public RagSearchController(RagSearchService ragSearchService) {
+    public RagSearchController(RagSearchService ragSearchService, SecIngestionService secIngestionService) {
         this.ragSearchService = ragSearchService;
+        this.secIngestionService = secIngestionService;
+    }
+
+    /**
+     * Streaming SSE endpoint invoked by Next.js proxy / LegalChat
+     */
+    @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> streamRagChat(@RequestBody RagSearchRequest request) {
+        log.info("Received streaming RAG chat request: {}", request.question());
+
+        if (request.question() == null || request.question().isBlank()) {
+            return Flux.empty();
+        }
+
+        try {
+            return ragSearchService.streamAnswerWithSecContext(request.question());
+        } catch (Exception e) {
+            log.error("Error streaming chat response for query: {}", request.question(), e);
+            return Flux.just("Error processing chat query: " + e.getMessage());
+        }
     }
 
     @PostMapping("/query")
