@@ -36,13 +36,15 @@ public class RagSearchController {
      */
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> streamRagChat(@RequestBody RagSearchRequest request) {
-        log.info("Received streaming RAG chat request: {}", request.question());
+        String query = request.getResolvedQuestion();
+        log.info("Received streaming RAG chat request: '{}'", query);
 
-        if (request.question() == null || request.question().isBlank()) {
+        if (query.isBlank()) {
+            log.warn("Empty prompt received in RagSearchRequest payload.");
             return Flux.empty();
         }
 
-        return ragSearchService.streamAnswerWithSecContext(request.question())
+        return ragSearchService.streamAnswerWithSecContext(query)
                 .map(chunk -> {
                     try {
                         return "0:" + objectMapper.writeValueAsString(chunk) + "\n";
@@ -51,7 +53,7 @@ public class RagSearchController {
                     }
                 })
                 .onErrorResume(e -> {
-                    log.error("Error streaming chat response", e);
+                    log.error("Error streaming chat response for query: '{}'", query, e);
                     return Flux.just("0:\"Error processing request: " + e.getMessage() + "\"\n");
                 });
     }
