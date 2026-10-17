@@ -46,6 +46,10 @@ spring:
     authentication:
       username: ${SPRING_NEO4J_USERNAME:neo4j}
       password: ${SPRING_NEO4J_PASSWORD}
+    config:
+      connection-timeout: 5s
+      max-connection-lifetime: 30m
+      max-transaction-retry-time: 10s
 
   # Spring AI (OpenAI Integration)
   ai:
