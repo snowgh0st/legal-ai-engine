@@ -51,30 +51,32 @@ public class RagSearchController {
         String textPartId = "0";
 
         Flux<String> textDeltas = ragSearchService.streamAnswerWithSecContext(query)
-                .map(chunk -> toSseEvent(Map.of("type", "text-delta", "id", textPartId, "delta", chunk)));
+                .map(chunk -> toJson(Map.of("type", "text-delta", "id", textPartId, "delta", chunk)));
 
+        // Spring's text/event-stream writer already prefixes each emitted element with
+        // "data:" and appends the blank-line terminator, so these must be bare JSON strings.
         return Flux.concat(
-                        Mono.just(toSseEvent(Map.of("type", "start"))),
-                        Mono.just(toSseEvent(Map.of("type", "text-start", "id", textPartId))),
+                        Mono.just(toJson(Map.of("type", "start"))),
+                        Mono.just(toJson(Map.of("type", "text-start", "id", textPartId))),
                         textDeltas,
-                        Mono.just(toSseEvent(Map.of("type", "text-end", "id", textPartId))),
-                        Mono.just(toSseEvent(Map.of("type", "finish"))),
-                        Mono.just("data: [DONE]\n\n")
+                        Mono.just(toJson(Map.of("type", "text-end", "id", textPartId))),
+                        Mono.just(toJson(Map.of("type", "finish"))),
+                        Mono.just("[DONE]")
                 )
                 .onErrorResume(e -> {
                     log.error("Error streaming chat response for query: '{}'", query, e);
                     return Flux.just(
-                            toSseEvent(Map.of("type", "error", "errorText", "Error processing request: " + e.getMessage())),
-                            "data: [DONE]\n\n"
+                            toJson(Map.of("type", "error", "errorText", "Error processing request: " + e.getMessage())),
+                            "[DONE]"
                     );
                 });
     }
 
-    private String toSseEvent(Object payload) {
+    private String toJson(Object payload) {
         try {
-            return "data: " + objectMapper.writeValueAsString(payload) + "\n\n";
+            return objectMapper.writeValueAsString(payload);
         } catch (Exception e) {
-            return "data: {\"type\":\"error\",\"errorText\":\"Serialization error\"}\n\n";
+            return "{\"type\":\"error\",\"errorText\":\"Serialization error\"}";
         }
     }
 
