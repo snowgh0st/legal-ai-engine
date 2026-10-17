@@ -11,6 +11,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/rag")
@@ -32,7 +35,8 @@ public class RagSearchController {
     }
 
     /**
-     * Streaming SSE endpoint formatted for Vercel AI SDK (0:"chunk"\n)
+     * Streaming SSE endpoint formatted for the Vercel AI SDK UI Message Stream Protocol
+     * (data: {"type": ...}\n\n events, terminated with data: [DONE]\n\n)
      */
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> streamRagChat(@RequestBody RagSearchRequest request) {
@@ -44,18 +48,34 @@ public class RagSearchController {
             return Flux.empty();
         }
 
-        return ragSearchService.streamAnswerWithSecContext(query)
-                .map(chunk -> {
-                    try {
-                        return "0:" + objectMapper.writeValueAsString(chunk) + "\n";
-                    } catch (Exception e) {
-                        return "0:\"\"\n";
-                    }
-                })
+        String textPartId = "0";
+
+        Flux<String> textDeltas = ragSearchService.streamAnswerWithSecContext(query)
+                .map(chunk -> toSseEvent(Map.of("type", "text-delta", "id", textPartId, "delta", chunk)));
+
+        return Flux.concat(
+                        Mono.just(toSseEvent(Map.of("type", "start"))),
+                        Mono.just(toSseEvent(Map.of("type", "text-start", "id", textPartId))),
+                        textDeltas,
+                        Mono.just(toSseEvent(Map.of("type", "text-end", "id", textPartId))),
+                        Mono.just(toSseEvent(Map.of("type", "finish"))),
+                        Mono.just("data: [DONE]\n\n")
+                )
                 .onErrorResume(e -> {
                     log.error("Error streaming chat response for query: '{}'", query, e);
-                    return Flux.just("0:\"Error processing request: " + e.getMessage() + "\"\n");
+                    return Flux.just(
+                            toSseEvent(Map.of("type", "error", "errorText", "Error processing request: " + e.getMessage())),
+                            "data: [DONE]\n\n"
+                    );
                 });
+    }
+
+    private String toSseEvent(Object payload) {
+        try {
+            return "data: " + objectMapper.writeValueAsString(payload) + "\n\n";
+        } catch (Exception e) {
+            return "data: {\"type\":\"error\",\"errorText\":\"Serialization error\"}\n\n";
+        }
     }
 
     @PostMapping("/query")
