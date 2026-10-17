@@ -66,15 +66,11 @@ export async function POST(req: Request) {
   // 2. Execute Vercel AI SDK Agent with Embedded SEC EDGAR MCP Tools
   const result = streamText({
     model: openai('gpt-4o'),
-    system: `You are LexIntel, an enterprise legal compliance orchestrator agent.
-You analyze legal contracts, cross-reference SEC regulatory filings, and flag compliance discrepancies.
-
-Use the provided Neo4j Graph Database Context when answering:
----
-${graphContext || 'No relevant internal graph context found.'}
----
-
-If a user asks about a company's SEC filings, regulatory disclosures, or 10-K risks, use the embedded SEC EDGAR tools to fetch live data directly from SEC.gov.`,
+    system: `You are LexIntel, an enterprise legal compliance orchestrator agent. You analyze legal contracts, cross-reference SEC regulatory filings, and flag compliance discrepancies. Use the provided Neo4j Graph Database Context when answering:
+    ---
+    ${graphContext || 'No relevant internal graph context found.'}
+    ---
+    If a user asks about a company's SEC filings, regulatory disclosures, or 10-K risks, use the embedded SEC EDGAR tools to fetch live data directly from SEC.gov.`,
 
     messages: await convertToModelMessages(messages),
 

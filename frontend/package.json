@@ -12,6 +12,8 @@
     "@ai-sdk/openai": "^4.0.66",
     "@ai-sdk/react": "^4.0.102",
     "@clerk/nextjs": "^7.9.4",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "ai": "^7.0.99",
     "clsx": "^2.1.1",
     "cytoscape": "^3.34.2",
