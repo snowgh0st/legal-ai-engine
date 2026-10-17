@@ -96,8 +96,11 @@ public class RagSearchService {
 
         List<String> graphFacts;
         try (var session = neo4jDriver.session()) {
+            log.info("Opened Neo4j session, about to call session.run()");
             var result = session.run(cypherQuery, Map.of("searchTerm", searchTerm));
+            log.info("session.run() returned, about to call result.list()");
             graphFacts = result.list(this::formatGraphRecord);
+            log.info("result.list() returned {} records", graphFacts.size());
         } catch (Exception e) {
             log.error("Failed to query Neo4j graph context", e);
             return "No matching graph context found due to query error.";
