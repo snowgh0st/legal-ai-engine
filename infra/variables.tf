@@ -27,8 +27,3 @@ variable "neo4j_password" {
   sensitive   = true
 }
 
-variable "local_ip_address" {
-  type        = string
-  description = "Your local machine public IP address in CIDR notation (e.g., 203.0.113.5/32) for temporary dev access."
-  default     = "0.0.0.0/0" # Override this with your actual public IP during testing
-}

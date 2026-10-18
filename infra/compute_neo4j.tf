@@ -25,16 +25,3 @@ resource "google_compute_instance" "neo4j_vm" {
   tags = ["neo4j-node"]
 }
 
-# Firewall rule to open Neo4j ports to your local IP for dev testing
-resource "google_compute_firewall" "allow_neo4j_local" {
-  name    = "allow-neo4j-local-dev"
-  network = google_compute_network.vpc_network.name
-
-  allow {
-    protocol = "tcp"
-    ports    = ["7474", "7687"]
-  }
-
-  source_ranges = [var.local_ip_address]
-  target_tags   = ["neo4j-node"]
-}
