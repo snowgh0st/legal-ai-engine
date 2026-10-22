@@ -1,6 +1,6 @@
 # ⚖️ LexIntel — Legal Contract & Compliance Knowledge Graph
 
-**AAn enterprise-grade GraphRAG engine that turns raw PDF contracts and SEC filings into a queryable Neo4j knowledge graph, powering legal and compliance intelligence with grounded, multi-hop retrieval.**
+**An enterprise-grade GraphRAG engine that turns raw PDF contracts and SEC filings into a queryable Neo4j knowledge graph, powering legal and compliance intelligence with grounded, multi-hop retrieval.**
 
 [![Java](https://img.shields.io/badge/Java-21-orange?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.2-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
@@ -20,21 +20,21 @@ Instead of flat, vector-only RAG, queries traverse graph edges (e.g., `Contract 
 
 ## Features
 
-- ⚡ Decoupled Modern Frontend — Built with Next.js App Router, TypeScript, Tailwind CSS, Framer Motion, and the Vercel AI SDK, with Speed Insights and Web Analytics enabled.
+- ⚡ **Decoupled Modern Frontend** — Built with Next.js App Router, TypeScript, Tailwind CSS, Framer Motion, and the Vercel AI SDK, with Speed Insights and Web Analytics enabled.
 
-- 🔐 Edge Authentication & Middleware — Secured using Clerk authentication (clerkMiddleware) with session propagation across server components and API route handlers.
+- 🔐 **Edge Authentication & Middleware** — Secured using Clerk authentication (clerkMiddleware) with session propagation across server components and API route handlers.
 
-- 📄 Multi-Source Ingestion — Ingests multi-page contract PDFs via Apache Tika and SEC regulatory data.
+- 📄 **Multi-Source Ingestion** — Ingests multi-page contract PDFs via Apache Tika and SEC regulatory data.
 
-- 🧠 LLM Entity & Relationship Extraction — Uses Spring AI and GPT-4o to extract typed entities (Contract, Clause, Party) and graph relations (DEPENDS_ON, CONFLICTS_WITH).
+- 🧠 **LLM Entity & Relationship Extraction** — Uses Spring AI and GPT-4o to extract typed entities (Contract, Clause, Party) and graph relations (DEPENDS_ON, CONFLICTS_WITH).
 
-- 🕸️ GraphRAG Engine — Combines multi-hop Cypher graph traversals with vector similarity search for grounded answers.
+- 🕸️ **GraphRAG Engine** — Combines multi-hop Cypher graph traversals with vector similarity search for grounded answers.
 
-- 🔎 Full Explainability Trace — Returns real-time execution thoughts detailing graph expansion and retained context.
+- 🔎 **Full Explainability Trace** — Returns real-time execution thoughts detailing graph expansion and retained context.
 
-- ☁️ GCP Serverless & Private Networking — Spring Boot backend deployed on GCP Cloud Run inside lexintel-vpc, connecting privately to a standalone Neo4j Docker container on a Compute Engine VM (10.8.0.0/28 range).
+- ☁️ **GCP Serverless & Private Networking** — Spring Boot backend deployed on GCP Cloud Run inside lexintel-vpc, connecting privately to a standalone Neo4j Docker container on a Compute Engine VM (10.8.0.0/28 range).
 
-- 🏗️ Infrastructure as Code (IaC) — Complete GCP networking, firewall rules, Cloud SQL PostgreSQL, and VM provisioning automated via Terraform (cloudsql.tf, vpc.tf, compute_neo4j.tf).
+- 🏗️ **Infrastructure as Code (IaC)** — Complete GCP networking, firewall rules, Cloud SQL PostgreSQL, and VM provisioning automated via Terraform (cloudsql.tf, vpc.tf, compute_neo4j.tf).
 
 
 ## Screenshots
@@ -126,8 +126,33 @@ BACKEND_URL=http://localhost:8080
 npm install
 npm run dev
 ```
-
 Open http://localhost:3000 in your browser.
+
+
+## API Reference
+All REST endpoints are exposed under the /api/v1/legal base path.
+| Method | Endpoint | Description |
+|---|---|---|
+|`POST`| `/contracts/ingest` | **Multipart PDF Upload.** Parses PDF via Apache Tika, extracts structured entities (`Contract`, `Clause`, `Party`) via GPT-4o, and executes a two-pass node/edge builder in Neo4j. Returns the generated contractId. |
+|`GET`|`/contracts/{contractId}/graph`|**Graph Visualization Payload.** Fetches a 2-hop sub-graph around the specified contract and returns a Cytoscape-compatible `GraphDataResponse` containing nodes and directed `DEPENDS_ON` edges.|
+|`POST`|`/query`|**GraphRAG Search & Synthesis.** Body: `{ "question": "..." }`. Runs Cypher pattern-matching graph traversal + vector search, executing tool calls (e.g., SEC EDGAR) as needed, and returns a grounded answer with explainability traces.|
+
+Example Usage
+```bash
+# 1. Ingest a contract PDF and extract entities/relationships
+curl -X POST http://localhost:8080/api/v1/legal/contracts/ingest \
+  -F "file=@sample_contract.pdf"
+
+# Response: { "contractId": "ctr_8f9a2b1c", "status": "SUCCESS" }
+
+# 2. Fetch the 2-hop sub-graph data for Cytoscape UI rendering
+curl -X GET http://localhost:8080/api/v1/legal/contracts/ctr_8f9a2b1c/graph
+
+# 3. Query the GraphRAG engine
+curl -X POST http://localhost:8080/api/v1/legal/query \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What triggers immediate termination under this contract?"}'
+```
 
 ## Developer SSH Tunneling for Production Neo4j
 
