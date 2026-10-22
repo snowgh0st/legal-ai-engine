@@ -9,6 +9,14 @@ import {
   Database, Layers, ArrowRight 
 } from "lucide-react";
 
+/**
+ * CUJ: main authenticated dashboard — contract PDF upload/ingestion on the left, chat or graph
+ * visualization on the right. `handleIngest` drives the full ingestion CUJ from the browser
+ * side: get a fresh Clerk token -> POST the file to `/api/v1/legal/contracts/ingest` (proxied
+ * to Spring Boot by `proxy.ts`) -> surface the resulting contract/clause counts or an error.
+ * The ingested contract's ID is kept in `lastContractId` and handed to `GraphCanvas` so the
+ * "Knowledge Graph Canvas" tab can render that contract's real sub-graph instead of demo data.
+ */
 export default function LegalPortalDashboard() {
   const { getToken } = useAuth();
   const { redirectToSignIn } = useClerk();
@@ -17,6 +25,7 @@ export default function LegalPortalDashboard() {
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [ingestStatus, setIngestStatus] = useState<string | null>(null);
+  const [lastContractId, setLastContractId] = useState<string | null>(null);
 
   // Clean up Object URL when component unmounts to prevent memory leaks
   useEffect(() => {
@@ -49,7 +58,8 @@ export default function LegalPortalDashboard() {
       // 1. Force retrieval of a fresh short-lived Clerk JWT
       const token = await getToken({ skipCache: true });
 
-      // 2. Ensure token is available or redirect
+      // 2. SAD PATH: no token available (session expired) — bounce to sign-in instead of
+      // sending an unauthenticated request we know the backend will reject.
       if (!token) {
         redirectToSignIn();
         return;
@@ -58,7 +68,10 @@ export default function LegalPortalDashboard() {
       // 3. Guarantee 'Bearer ' is prefixed cleanly
       const authHeader = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
 
-      // 4. Pass Bearer token to Spring Boot via Next.js Proxy
+      // 4. Pass Bearer token to Spring Boot via Next.js Proxy. This call blocks until the
+      // backend has fully finished ingestion (Tika extraction, LLM parsing, Neo4j + Postgres
+      // writes, Slack notify) — see ContractIngestionService — so it can take a while for
+      // large PDFs.
       const res = await fetch("/api/v1/legal/contracts/ingest", {
         method: "POST",
         headers: {
@@ -67,8 +80,9 @@ export default function LegalPortalDashboard() {
         body: formData,
       });
 
+      // SAD PATH: token was present but rejected server-side (e.g. expired between issuance
+      // and use) — same recovery as a missing token.
       if (res.status === 401) {
-        // Session expired upstream
         redirectToSignIn();
         return;
       }
@@ -82,6 +96,9 @@ export default function LegalPortalDashboard() {
       setIngestStatus(
         `Extracted "${data.title || file.name}"! Persisted to Neo4j (${data.clauses ? data.clauses.length : 0} clauses) & PostgreSQL.`
       );
+      // Drives the Knowledge Graph Canvas tab: GraphCanvas fetches this contract's real
+      // sub-graph instead of showing its hardcoded demo data once this is set.
+      setLastContractId(data.contractId ?? null);
     } catch (err: any) {
       setIngestStatus(`Ingestion Error: ${err.message}`);
     } finally {
@@ -186,7 +203,7 @@ export default function LegalPortalDashboard() {
           {/* Tab Content */}
           <div className="flex-1 p-4 overflow-hidden flex flex-col">
             {activeTab === "graph" ? (
-              <DynamicGraphCanvas />
+              <DynamicGraphCanvas contractId={lastContractId} />
             ) : (
               <div className="flex-1 h-full overflow-hidden">
                 <LegalChat />

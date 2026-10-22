@@ -15,6 +15,18 @@ const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+/**
+ * NOTE: as of this writing, nothing in the UI calls this route — `LegalChat.tsx` sends chat
+ * messages directly to `/api/v1/rag/chat`, which `proxy.ts` rewrites straight through to the
+ * Spring Boot backend (`RagSearchController#streamRagChat`), bypassing this file entirely.
+ *
+ * This route is a self-contained alternative chat pipeline that runs the Vercel AI SDK's own
+ * agent loop (`streamText` + tools) instead of the backend's, and separately fetches the Neo4j
+ * graph context via `/api/v1/rag/context` before calling the LLM. Unlike the backend path, this
+ * one can resolve SEC CIKs and fetch filings live via `secCompanyLookup`/`getRecentSecFilings`
+ * mid-conversation without a separate ingestion step. If you're asked to wire SEC lookups into
+ * the main chat UI, this is almost certainly the code to point `LegalChat.tsx` at.
+ */
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json();
 

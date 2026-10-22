@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID; // 👈 Import java.util.UUID
 
+/** One ingested SEC filing (currently always a 10-K); holds extracted {@link RiskFactor}s via {@code HAS_RISK_FACTOR}. */
 @Node("Filing")
 public class Filing {
 

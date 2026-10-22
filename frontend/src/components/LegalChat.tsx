@@ -6,6 +6,14 @@ import { DefaultChatTransport } from 'ai';
 import { Bot, User, Send, Loader2, ShieldCheck, FileText } from 'lucide-react';
 import { useAuth } from "@clerk/nextjs";
 
+/**
+ * HOT PATH UI: the chat panel used for every legal/compliance question. Talks directly to
+ * `/api/v1/rag/chat` (NOT the Next.js `/api/chat` route) — `proxy.ts` rewrites that path
+ * straight through to the Spring Boot backend's `RagSearchController#streamRagChat`, so this
+ * component bypasses the Vercel AI SDK's own SEC-tool-calling route entirely. Each render of a
+ * message re-derives its text from `message.parts` to stay compatible across the few message
+ * shapes the backend's SSE stream and older AI SDK versions can produce.
+ */
 export default function LegalChat() {
   const [input, setInput] = useState('');
   const { getToken } = useAuth();

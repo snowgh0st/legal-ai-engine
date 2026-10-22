@@ -6,6 +6,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+/**
+ * Orchestrates the SEC 10-K ingestion pipeline: fetch filing text from EDGAR, extract a graph
+ * from it, and notify Slack. See {@link SecEdgarClient} for the EDGAR HTTP calls and
+ * {@link FilingGraphExtractionService} for how risk factors are pulled out of the raw filing.
+ */
 @Service
 public class SecIngestionService {
 
@@ -32,7 +37,9 @@ public class SecIngestionService {
         // 1. Parse filing text into Neo4j nodes (Company, Filing, RiskFactor, FinancialMetric)
         graphExtractionService.processAndPersistFiling(cik, companyName, filingText);
 
-        // 2. Dispatch real-time Slack notification
+        // 2. Dispatch real-time Slack notification.
+        // SAD PATH: deliberately non-fatal — a Slack outage must never fail an otherwise
+        // successful ingestion, so failures here are logged at WARN and swallowed.
         try {
             slackNotificationService.sendSecIngestionAlert(cik, companyName, filingText.length());
         } catch (Exception e) {

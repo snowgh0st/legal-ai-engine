@@ -12,6 +12,12 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Builds the (Company)-[:FILED]->(Filing)-[:HAS_RISK_FACTOR]->(RiskFactor) sub-graph from raw
+ * 10-K text. Risk extraction ({@link #extractRiskFactors}) is a simple regex keyword scan, not
+ * an LLM call — unlike contract ingestion, no AI is involved here, so don't expect
+ * summarization quality; it just grabs the sentence around a handful of known risk topics.
+ */
 @Service
 public class FilingGraphExtractionService {
 
@@ -41,6 +47,12 @@ public class FilingGraphExtractionService {
         return companyRepository.save(company);
     }
 
+    /**
+     * Scans the full filing text (not specifically the Item 1A section) for a fixed set of
+     * risk keywords and captures each match up to the next sentence boundary, capped at 5
+     * hits. SAD PATH: if none of the keywords appear anywhere in the filing, a single generic
+     * "GENERAL" RiskFactor is created so a Filing node is never left with zero risk factors.
+     */
     private List<RiskFactor> extractRiskFactors(String text) {
         List<RiskFactor> risks = new ArrayList<>();
 

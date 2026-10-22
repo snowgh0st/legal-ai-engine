@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   description: "Autonomous legal analysis and SEC EDGAR 10-K compliance platform",
 };
 
+/** Root layout: wraps the whole app in `ClerkProvider`, the client-side counterpart to the auth check in `proxy.ts` — every page and component that calls `useAuth()`/`useUser()` depends on this being present. */
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <ClerkProvider>

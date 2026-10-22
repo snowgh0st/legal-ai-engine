@@ -11,6 +11,16 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import jakarta.persistence.EntityManagerFactory;
 
+/**
+ * Registers the two transaction managers the app needs because it writes to two different
+ * databases: Postgres (JPA, audit logs) and Neo4j (contract/SEC graphs). {@code
+ * transactionManager} is {@code @Primary} so plain {@code @Transactional} defaults to Postgres;
+ * anything touching the graph must explicitly request {@code @Transactional("neo4jTransactionManager")}
+ * (see {@link com.lexintel.sec.service.FilingGraphExtractionService#processAndPersistFiling}).
+ * A single {@code @Transactional} method cannot atomically span both — see the note on
+ * {@link com.lexintel.contracts.service.ContractIngestionService} for the practical
+ * consequence of that.
+ */
 @Configuration
 @EnableTransactionManagement
 public class DatabaseConfig {

@@ -5,6 +5,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+/**
+ * SAD PATH reference: if the frontend starts getting CORS errors in the browser console after
+ * a new deploy, it's almost always because the Vercel preview/production URL isn't in this
+ * allow-list yet — update {@code allowedOrigins} below.
+ */
 @Configuration
 public class WebCorsConfig {
 

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+/** Neo4j access for {@link Clause} nodes, including a manual multi-hop traversal query for context expansion (currently unused by {@link com.lexintel.rag.service.RagSearchService}, which runs its own inline Cypher instead). */
 @Repository
 public interface ClauseRepository extends Neo4jRepository<Clause, String> {
 

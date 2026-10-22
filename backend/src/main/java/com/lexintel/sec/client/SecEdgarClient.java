@@ -10,6 +10,19 @@ import org.springframework.web.client.RestClient;
 
 import java.util.List;
 
+/**
+ * Thin HTTP client over the public SEC EDGAR APIs (no auth required, but EDGAR rejects
+ * requests without a descriptive User-Agent — see the constructor). Two separate
+ * {@link RestClient}s are used because EDGAR serves submission metadata from
+ * {@code data.sec.gov} and the actual filing documents from {@code www.sec.gov/Archives} on
+ * different hosts.
+ *
+ * Both clients are built from the Spring-managed {@code RestClient.Builder} (cloned once per
+ * base URL via {@link org.springframework.web.client.RestClient.Builder#clone()}) so the
+ * connection-pool and timeout tuning in {@link com.lexintel.config.RestClientConfig} actually
+ * applies to EDGAR calls — a single 10-K ingestion makes at least two EDGAR requests
+ * (submissions index + archive document), so reusing pooled connections matters here.
+ */
 @Component
 public class SecEdgarClient {
 
@@ -19,17 +32,18 @@ public class SecEdgarClient {
     private final RestClient secArchivesClient;
 
     public SecEdgarClient(
+            RestClient.Builder restClientBuilder,
             @Value("${sec.edgar.user-agent:LexIntel LegalAI/1.0 (compliance@lexintel.ai)}") String userAgent,
             @Value("${sec.edgar.base-url:https://data.sec.gov}") String baseUrl,
             @Value("${sec.edgar.archives-url:https://www.sec.gov/Archives}") String archivesUrl) {
 
         // SEC EDGAR strictly checks User-Agent header; requests without it are blocked (403 Forbidden)
-        this.secDataClient = RestClient.builder()
+        this.secDataClient = restClientBuilder.clone()
                 .baseUrl(baseUrl)
                 .defaultHeader(HttpHeaders.USER_AGENT, userAgent)
                 .build();
 
-        this.secArchivesClient = RestClient.builder()
+        this.secArchivesClient = restClientBuilder.clone()
                 .baseUrl(archivesUrl)
                 .defaultHeader(HttpHeaders.USER_AGENT, userAgent)
                 .build();
@@ -39,6 +53,8 @@ public class SecEdgarClient {
      * Formats raw CIK into 10-digit zero-padded string required by SEC API.
      */
     private String formatCik(String rawCik) {
+        // SAD PATH: missing/non-numeric CIK — fail fast with IllegalArgumentException so the
+        // controller can map it to a 400 instead of letting a malformed request hit SEC's API.
         if (rawCik == null || rawCik.isBlank()) {
             throw new IllegalArgumentException("CIK cannot be null or empty.");
         }
@@ -64,6 +80,13 @@ public class SecEdgarClient {
 
     /**
      * Fetches the raw text/HTML content of the most recent 10-K filing.
+     *
+     * SAD PATHS: a company with a malformed/empty submissions payload throws
+     * {@link IllegalStateException} (treated as a server-side 500 by the controller); a company
+     * that simply has no 10-K in its recent filings (e.g. a non-US issuer, or one that only
+     * files 10-Qs) throws {@link IllegalArgumentException} (treated as a 400 — not our bug, bad
+     * input). Note this only scans the "recent" filings window in the submissions index, so a
+     * company whose 10-K has rolled off that window will also hit this branch.
      */
     public String fetchLatest10KFilingText(String rawCik) {
         String paddedCik = formatCik(rawCik);

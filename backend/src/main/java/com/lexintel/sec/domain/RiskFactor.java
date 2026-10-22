@@ -7,6 +7,7 @@ import org.springframework.data.neo4j.core.schema.GeneratedValue.UUIDGenerator;
 
 import java.util.UUID; // 👈 Import java.util.UUID
 
+/** A single risk disclosure snippet, keyword-matched out of filing text by {@link com.lexintel.sec.service.FilingGraphExtractionService}. */
 @Node("RiskFactor")
 public class RiskFactor {
 

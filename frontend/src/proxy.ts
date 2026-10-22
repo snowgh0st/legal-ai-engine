@@ -1,6 +1,14 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
+/**
+ * EXECUTION PATH: runs on every request matched by `config.matcher` below, i.e. basically every
+ * page load and every /api/* call. Does two unrelated jobs in one middleware:
+ *   1. Gate page routes behind Clerk auth (redirect to sign-in if unauthenticated).
+ *   2. Reverse-proxy /api/* calls to the Spring Boot backend, attaching a Bearer token.
+ * Any contract-ingestion or RAG-chat request from the browser passes through here first — if
+ * calls to the backend are failing with 401/500 before even reaching Spring, start here.
+ */
 // Explicit list of public paths (sign-in, sign-up, static public assets)
 const PUBLIC_PATHS = ['/sign-in', '/sign-up'];
 
@@ -45,7 +53,9 @@ export default clerkMiddleware(async (auth, req) => {
       }
     }
 
-    // C. If no token exists or session expired, reject early
+    // SAD PATH: no usable token anywhere — reject before proxying rather than letting the
+    // request hit the Spring Boot backend (which would reject it anyway via SecurityConfig,
+    // but failing fast here avoids an unnecessary network round-trip).
     if (!rawToken || rawToken === 'null' || rawToken === 'undefined') {
       return new NextResponse('Unauthorized: Missing or expired Clerk session token', { status: 401 });
     }

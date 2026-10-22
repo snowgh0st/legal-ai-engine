@@ -13,6 +13,18 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Connection pool / timeout tuning (10s connect / 60s response, pooled connections) applied to
+ * any Spring-injected {@code RestClient.Builder} — notably {@link
+ * com.lexintel.sec.client.SecEdgarClient}, which clones this builder for both of its EDGAR
+ * clients, and Spring AI's own HTTP client for calling the LLM provider.
+ *
+ * NOTE: {@link com.lexintel.slack.service.SlackNotificationService} deliberately opts out and
+ * builds its own {@code RestClient} from a plain {@code RestClient.builder()} with a much
+ * shorter 5-second connect/read timeout — that's intentional (a Slack webhook must fail fast
+ * and never hold up an ingestion request), not an oversight, so don't "fix" it by routing it
+ * through this bean.
+ */
 @Configuration
 public class RestClientConfig {
 

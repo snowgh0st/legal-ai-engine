@@ -11,6 +11,13 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Root node of the contract knowledge graph: one per ingested PDF (see
+ * {@link com.lexintel.contracts.service.ContractIngestionService}). Linked to {@link Party} via
+ * {@code PARTY_TO} and {@link Clause} via {@code HAS_CLAUSE} — these two relationships are what
+ * {@link com.lexintel.rag.service.RagSearchService#retrieveContext} traverses to answer chat
+ * questions.
+ */
 @Node("Contract")
 @Data
 @Builder

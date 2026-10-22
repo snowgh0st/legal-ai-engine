@@ -3,6 +3,7 @@ package com.lexintel.sec.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
+/** Partial mapping of SEC EDGAR's {@code /submissions/CIK{cik}.json} response — only the fields {@link com.lexintel.sec.client.SecEdgarClient} needs to locate the latest 10-K. */
 public record SecSubmissionResponse(
     String cik,
     String entityType,

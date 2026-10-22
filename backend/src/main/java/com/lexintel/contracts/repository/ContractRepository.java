@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/** Neo4j access for {@link Contract} graph nodes; used by the ingestion CUJ ({@code save}) and ad-hoc graph lookups. */
 @Repository
 public interface ContractRepository extends Neo4jRepository<Contract, String> {
 

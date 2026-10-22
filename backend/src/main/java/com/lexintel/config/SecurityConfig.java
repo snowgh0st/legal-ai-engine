@@ -12,6 +12,14 @@ import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+/**
+ * EXECUTION PATH: every request to {@code /api/v1/**} and {@code /admin/**} must carry a valid
+ * JWT bearer token, verified against {@code issuer-uri} (Clerk, in this app — see the frontend
+ * {@code proxy.ts}, which attaches the Clerk session token before forwarding requests here).
+ * SAD PATH: a missing/invalid/expired token is rejected by Spring Security's OAuth2 resource
+ * server filter before the request ever reaches a controller — look here first (and in
+ * {@code application.yml}'s {@code issuer-uri}) when requests are failing with 401/403.
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {

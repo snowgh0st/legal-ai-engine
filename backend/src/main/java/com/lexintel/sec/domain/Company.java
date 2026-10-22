@@ -7,6 +7,7 @@ import org.springframework.data.neo4j.core.schema.Relationship;
 import java.util.HashSet;
 import java.util.Set;
 
+/** Root node of the SEC sub-graph, keyed by CIK; one per company, with a {@code FILED} relationship to each ingested {@link Filing}. */
 @Node("Company")
 public class Company {
 

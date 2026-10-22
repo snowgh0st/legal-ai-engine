@@ -1,16 +1,19 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import cytoscape, { Core } from "cytoscape";
 
-interface GraphCanvasProps {
-  graphData?: {
-    nodes: Array<{ id: string; label: string; type: "Contract" | "Party" | "Clause" }>;
-    edges: Array<{ source: string; target: string; label: string }>;
-  };
+interface GraphData {
+  nodes: Array<{ id: string; label: string; type: "Contract" | "Party" | "Clause" }>;
+  edges: Array<{ source: string; target: string; label: string }>;
 }
 
-const defaultGraphData = {
+interface GraphCanvasProps {
+  /** Contract to fetch and render the real graph for. Omit to show the static demo graph. */
+  contractId?: string | null;
+}
+
+const defaultGraphData: GraphData = {
   nodes: [
     { id: "c1", label: "MSA 2025-001", type: "Contract" as const },
     { id: "p1", label: "Apex Global", type: "Party" as const },
@@ -27,9 +30,47 @@ const defaultGraphData = {
   ],
 };
 
-export default function GraphCanvas({ graphData = defaultGraphData }: GraphCanvasProps) {
+/**
+ * Cytoscape visualization of the contract knowledge graph (Contract/Party/Clause nodes).
+ *
+ * When given a `contractId` (passed down from `page.tsx` after a successful ingestion), fetches
+ * the real sub-graph from `GET /api/v1/legal/contracts/{contractId}/graph` (proxied to Spring
+ * Boot's `ContractController#getContractGraph` by `proxy.ts`). With no `contractId` — e.g.
+ * before anything has been ingested this session — it falls back to a hardcoded sample graph
+ * purely so the tab isn't empty on first load.
+ */
+export default function GraphCanvas({ contractId }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
+  const [graphData, setGraphData] = useState<GraphData>(defaultGraphData);
+
+  useEffect(() => {
+    if (!contractId) {
+      setGraphData(defaultGraphData);
+      return;
+    }
+
+    let cancelled = false;
+
+    fetch(`/api/v1/legal/contracts/${contractId}/graph`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Graph fetch failed with status ${res.status}`);
+        return res.json();
+      })
+      .then((data: GraphData) => {
+        if (!cancelled) setGraphData(data);
+      })
+      .catch((err) => {
+        // SAD PATH: graph fetch failed (contract not found, network error) — keep showing the
+        // demo graph rather than an empty canvas.
+        console.warn("Failed to load contract graph, falling back to demo data:", err);
+        if (!cancelled) setGraphData(defaultGraphData);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [contractId]);
 
   useEffect(() => {
     if (!containerRef.current) return;

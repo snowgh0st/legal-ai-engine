@@ -5,6 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
+/**
+ * Catch-all request shape for the RAG endpoints. Deliberately permissive ({@code question},
+ * {@code prompt}, {@code text}, or a full {@code messages} array are all accepted) because this
+ * same payload type is used both by direct API callers (simple {@code question} field) and by
+ * the Vercel AI SDK chat transport (which sends a {@code messages} array of UI messages). See
+ * {@link #getResolvedQuestion()} for how the two shapes are reconciled into one string.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record RagSearchRequest(
     @JsonProperty("question") String question,

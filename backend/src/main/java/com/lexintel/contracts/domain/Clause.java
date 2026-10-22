@@ -10,6 +10,19 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+/**
+ * A single clause extracted from a contract by the LLM during ingestion. {@code embedding} is
+ * populated via {@link org.springframework.ai.embedding.EmbeddingModel} but isn't currently
+ * queried by vector similarity anywhere — {@link com.lexintel.rag.service.RagSearchService}
+ * does plain keyword matching on {@code rawText}/{@code clauseType} instead.
+ *
+ * {@code dependentClauses} (DEPENDS_ON) is populated during ingestion from the LLM's
+ * {@code dependsOnClauseIds} — see
+ * {@link com.lexintel.contracts.service.ContractIngestionService#processAndPersistContract}.
+ * {@code conflictingClauses} (CONFLICTS_WITH) is still modeled here but nothing extracts or
+ * populates it today — there's no equivalent "conflictsWithClauseIds" field on the extraction
+ * DTO yet.
+ */
 @Node("Clause")
 @Data
 @Builder

@@ -12,6 +12,13 @@ import java.util.Map;
 import java.time.Duration;
 
 
+/**
+ * Fire-and-forget Slack webhook notifications for the two ingestion CUJs (contract upload,
+ * SEC 10-K ingestion). Both methods intentionally catch and log every exception rather than
+ * propagating — a Slack/webhook failure must never fail the ingestion request itself. If
+ * notifications silently stop appearing, check {@code slack.webhook.url} is actually
+ * configured (an empty/placeholder value just logs and skips, no error).
+ */
 @Service
 public class SlackNotificationService {
 

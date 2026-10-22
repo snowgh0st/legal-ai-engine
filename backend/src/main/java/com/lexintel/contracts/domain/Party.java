@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
+/** A contracting party (client/vendor/contractor) extracted during ingestion; linked from {@link Contract} via {@code PARTY_TO}. */
 @Node("Party")
 @Data
 @Builder

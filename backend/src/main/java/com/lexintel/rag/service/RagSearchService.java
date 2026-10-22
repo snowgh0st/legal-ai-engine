@@ -17,6 +17,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * HOT PATH: core RAG (Retrieval-Augmented Generation) logic for the legal chat assistant.
+ *
+ * Flow for every chat message:
+ *   1. Pull relevant facts out of the Neo4j contract knowledge graph ({@link #retrieveContext}).
+ *   2. Hand that context + the user's question to the LLM via Spring AI's {@link ChatClient}.
+ *   3. Stream (or return) the LLM's answer back to the controller.
+ *
+ * If you're troubleshooting "the assistant gave a weird/empty answer", start by checking
+ * whether {@link #retrieveContext} actually matched anything in the graph — a bad match here
+ * (wrong search term, no clauses in the DB) is the most common root cause.
+ */
 @Service
 public class RagSearchService {
 
@@ -37,18 +49,28 @@ public class RagSearchService {
     }
 
     /**
-     * Streams answers using combined Neo4j graph context and SEC EDGAR tool disclosures.
-     * Integrates non-blocking context fetching with a strict 5-second timeout safeguard.
+     * HOT PATH: builds the streaming response for {@code POST /api/v1/rag/chat}.
+     *
+     * The Neo4j lookup ({@link #retrieveContext}) runs on a bounded-elastic thread so it never
+     * blocks the reactive pipeline, and is bounded by a strict 5-second timeout — if the graph
+     * DB is slow or unreachable, the chat still responds (just without internal contract
+     * context) instead of hanging the whole conversation. This timeout/error handling is the
+     * most important SAD PATH in the chat flow: both branches below fall back to a plain string
+     * that gets fed to the LLM as "context" so the user still gets an answer.
      */
     public Flux<String> streamAnswerWithSecContext(String question) {
         return Mono.fromCallable(() -> retrieveContext(question))
                 .subscribeOn(Schedulers.boundedElastic())
                 .timeout(Duration.ofSeconds(5))
                 .onErrorResume(TimeoutException.class, e -> {
+                    // SAD PATH: Neo4j didn't respond in time — degrade gracefully rather than
+                    // failing the whole chat request.
                     log.warn("Neo4j context retrieval timed out for query: '{}'. Proceeding with fallback context.", question);
                     return Mono.just("Graph context lookup timed out. Proceeding with standard RAG knowledge.");
                 })
                 .onErrorResume(e -> {
+                    // SAD PATH: any other failure (driver error, query error) — same graceful
+                    // degradation.
                     log.error("Error retrieving graph context for query: '{}'", question, e);
                     return Mono.just("No graph context available due to an unexpected error.");
                 })
@@ -72,7 +94,15 @@ public class RagSearchService {
     }
 
     /**
-     * Traverses Neo4j and returns raw graph sub-tree context string.
+     * Traverses Neo4j and returns a raw graph sub-tree context string for the given question.
+     *
+     * This is a simple keyword-match lookup, not true vector/semantic search: the question is
+     * reduced to a crude search term ({@link #extractSearchTerm}) and matched via
+     * case-insensitive {@code CONTAINS} against clause text, clause type, and contract title.
+     * If nothing matches, it falls back to the 5 most recent contract clauses
+     * ({@link #retrieveFallbackContext}) rather than returning nothing, so the LLM always has
+     * *some* grounding — a common EXECUTION PATH gotcha: a "no results" answer from the
+     * assistant is more often a search-term miss here than an empty database.
      */
     public String retrieveContext(String question) {
         String searchTerm = extractSearchTerm(question);
@@ -102,11 +132,15 @@ public class RagSearchService {
             graphFacts = result.list(this::formatGraphRecord);
             log.info("result.list() returned {} records", graphFacts.size());
         } catch (Exception e) {
+            // SAD PATH: Neo4j session/query failure — surface a context string instead of
+            // throwing, so the caller's timeout/error handling doesn't have to special-case this.
             log.error("Failed to query Neo4j graph context", e);
             return "No matching graph context found due to query error.";
         }
 
         if (graphFacts.isEmpty()) {
+            // SAD PATH: zero keyword matches — fall back to a generic sample of clauses rather
+            // than returning an empty context string.
             log.warn("No graph nodes matched term: '{}'. Running fallback query.", searchTerm);
             return retrieveFallbackContext();
         }
@@ -115,7 +149,10 @@ public class RagSearchService {
     }
 
     /**
-     * Full Spring AI non-streaming endpoint handler.
+     * Non-streaming variant used by {@code /api/v1/rag/query} and
+     * {@code /api/v1/legal/query}: same context retrieval as the streaming hot path, but
+     * waits for the full LLM response (no SEC-tool awareness, no timeout safeguard on the
+     * Neo4j call) and returns it with the graph context attached for debugging.
      */
     public RagSearchResponse answerLegalQuestion(String question) {
         String graphContext = retrieveContext(question);
@@ -140,6 +177,7 @@ public class RagSearchService {
         return new RagSearchResponse(question, answer, graphContext);
     }
 
+    /** Flattens one Cypher result row into a single human/LLM-readable line of context. */
     private String formatGraphRecord(Record record) {
         return String.format(
             "Contract: '%s' | Party: '%s' | Clause [%s]: '%s' | Rel: '%s' -> Related Clause [%s]",
@@ -152,11 +190,19 @@ public class RagSearchService {
         );
     }
 
+    /**
+     * Crude keyword extraction: strips common English/legal stopwords so the Cypher
+     * {@code CONTAINS} match in {@link #retrieveContext} has a better chance of hitting
+     * meaningful terms (e.g. "What is the termination clause?" -> "termination"). This is NOT
+     * NLP-grade — multi-word or synonym queries will often miss, which is the main reason
+     * {@link #retrieveFallbackContext} exists.
+     */
     private String extractSearchTerm(String question) {
         if (question == null || question.isBlank()) return "";
         return question.replaceAll("(?i)\\b(what|is|are|the|in|for|and|or|of|clause|section)\\b", "").trim();
     }
 
+    /** SAD PATH fallback: returns a generic sample of clauses when the keyword search matches nothing. */
     private String retrieveFallbackContext() {
         String fallbackQuery = """
             MATCH (c:Contract)-[:HAS_CLAUSE]->(cl:Clause)
