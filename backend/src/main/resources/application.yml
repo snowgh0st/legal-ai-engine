@@ -110,7 +110,7 @@ sec:
 # Slack Webhook Configuration
 slack:
   webhook:
-    url: ${SLACK_WEBHOOK_URL:https://hooks.slack.com/services/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}
+    url: ${SLACK_WEBHOOK_URL}
 
 # Logging Levels
 logging:
